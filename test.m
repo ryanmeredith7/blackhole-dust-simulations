@@ -19,4 +19,6 @@ bi(xs < x0) = -asin(sqrt(8*pi*p0/3 - a0 ^ -2));
 
 while true
 
+    disp("hi");
+
 end
