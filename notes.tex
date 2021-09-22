@@ -1,0 +1,157 @@
+\documentclass[12pt]{article}
+\usepackage{parskip}
+\frenchspacing
+
+\usepackage{hyperref}
+\usepackage{fontspec}
+\setmainfont{EB Garamond}
+
+\usepackage[intlimits]{mathtools}
+\usepackage{amssymb}
+\newcommand{\dd}{\mathop{}\!\mathrm{d}}
+
+\title{Solving the PDEs}
+\author{Ryan Meredith}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+Starting from the equations
+\[ \dot{b} = \frac{\gamma x}{2(E^b)^2} - \frac{\gamma}{2x} - \frac{x}{\gamma\Delta} \sin\left(
+\frac{\sqrt{\Delta}}{x}b \right) \left( \frac{3}{2}\sin\left( \frac{\sqrt{\Delta}}{x}b \right) +
+\partial_x \left( \sin\left(\frac{\sqrt{\Delta}}{x}b\right) \right) \right) \]
+and
+\[ \dot{E^b} = -\frac{x^2}{\gamma\sqrt{\Delta}} \partial_x \left( \frac{E^b}{x} \right) \sin \left(
+\frac{\sqrt{\Delta}}{x}b \right) \cos \left( \frac{\sqrt{\Delta}}{x}b \right) \]
+we can introduce the variables
+\[ \beta = \frac{\sqrt{\Delta}}{x}b \]
+and
+\[ \alpha = \gamma\sqrt{\Delta} \left( \frac{1}{x^2} - \frac{1}{(E^b)^2} \right). \]
+so
+\[ \dot{\alpha} = -\frac{x\sin(2\beta)}{2\gamma\sqrt{\Delta}}\alpha_x -
+\frac{\sin(2\beta)\alpha}{\gamma\sqrt{\Delta}} \]
+and
+\[ \dot{\beta} = -\frac{x\sin(2\beta)}{2\gamma\sqrt{\Delta}}\beta_x -
+\frac{3\sin^2(\beta)}{2\gamma\sqrt{\Delta}} - \frac{\alpha}{2} \]
+
+\section{Numerics}
+
+From here on we will set $\Delta=\gamma=1$, thus we have the equations
+\[ \dot{\alpha} = -\frac{x}{2}\sin(2\beta)\alpha_x - \sin(2\beta)\alpha \]
+and
+\[ \dot{\beta} = -\frac{x}{2}\sin(2\beta)\beta_x - \frac{3}{2}\sin^2(\beta) - \frac{\alpha}{2} \]
+To solve this numerically, we must first break the domain up into cells. Let $x_0$ be the start of
+the domain and $x_n = x_0 + n\Delta x$, then we have cells $C_n = [x_n,x_{n+1}]$. Next, at the
+initial time $t_1$, we approximate $\alpha$ and $\beta$ as constant inside each cell, that is for
+$x\in(x_n,x_{n+1})$ we have $\alpha(x,t_1)=\alpha_n^1$ and $\beta(x,t_1) = \beta_n^1$.
+
+\subsection{Wave Speeds}
+
+Following Randall J. Leveque's \textit{Finite-Volume Methods for Hyperbolic Problems}, we can view
+the discontinuities between cells as waves and then calculate the wave speeds to propagate them into
+the neighboring cells to calculate the solution after a time step $\Delta t$. As long as the wave is
+moving entirely in one direction, whether it is a shock wave or a rarefaction wave, we can simply
+set the wave speeds to
+\[ s_n = \begin{dcases}
+    \frac{x}{2} \frac{\sin^2(\beta_n^1) - \sin^2(\beta_{n-1}^1)}{\beta_n^1 - \beta_{n-1}^1},
+    & \beta_{n-1}^1 \ne \beta_n^1 \\
+    \frac{x}{2} \sin(2\beta_n^1), & \beta_{n-1}^1 = \beta_n^1
+\end{dcases} \]
+but in the case of a transonic rarefaction wave, where part of the wave moves to the left and part
+moves to the right, things get a little more complicated.
+
+To aid with this, we can simply assume there is up to two waves at each cell interface, a left
+moving one and a right moving one. For the case where there is only a wave moving in one direction,
+we can simply set the wave speed in the other direction to 0. This could be done like this
+\[ s^l_n = \min(s_n,0) \]
+\[ s^r_n = \max(s_n,0) \]
+but it's probably easier computationally to simply partition them based on sign into new arrays
+whose default value is 0. The transonic rarefaction waves happen in two cases, if $\beta_{n-1}^1 <
+\beta_n^1$ and the speed switches from negative to positive, or if $\beta_{n-1}^1 > \beta_n^1$ and
+the speed switches from positive to negative. Since $x$ is always positive, we need only worry about
+when $\sin(2\beta)$ changes sign, which we can use quadrants for.
+
+The level sets of the function $\left\lfloor \frac{x}{\pi} \right\rfloor$ are cycles of the function
+$\sin(2x)$, and the transition between cycles is the only place $\sin$ changes sign from negative to
+positive, so the first type of transonic rarefaction wave happens if and only if
+\[ \left\lfloor \frac{\beta_{n-1}^1}{\pi} \right\rfloor < \left\lfloor \frac{\beta_n^1}{\pi}
+\right\rfloor \]
+Now the speed of the leftward moving wave can be calculated by taking the average speed of the
+portion of the wave before the first change from negative to positive, and the speed of the
+rightward moving wave can be calculated by taking the average speed of the portion of the wave after
+the last change from negative to positive. This takes the form
+\[ s^l_n = \frac{x_n}{2} \frac{\sin^2(\beta^*) - \sin^2(\beta_{n-1}^1)}{\beta^* - \beta_{n-1}^1} \]
+\[ s^r_n = \frac{x_n}{2} \frac{\sin^2(\beta_n^1) - \sin^2(\beta^*)}{\beta_n^1 - \beta^*} \]
+where $\beta^*$ is the points points where the speed changes from negative to positive, which may or
+may not be the same in the two equations. However, we do not actually need to calculate $\beta^*$
+since we know $\sin^2(\beta^*)=0$ and we only need to get the proper fluctuations from the
+propagating waves. To do this we can simply scale the wave speed so that it will act like a wave of
+the full magnitude, and then use the same method as for the full magnitude waves we calculated
+before. To do this we can simply use
+\[ s^l_n = \frac{x_n}{2} \frac{\sin^2(\beta_{n-1}^1)}{\beta_{n-1}^1 - \beta_n^1} \]
+\[ s^r_n = \frac{x_n}{2} \frac{\sin^2(\beta_n^1)}{\beta_n^1 - \beta_{n-1}^1} \]
+
+The same arguments apply for the other type of transonic rarefaction waves, which will happen if and
+only if
+\[ \left\lfloor \frac{\beta_{n-1}^1}{\pi} + \frac{1}{2} \right\rfloor > \left\lfloor
+\frac{\beta_n^1}{\pi} + \frac{1}{2} \right\rfloor \]
+and we can use the speeds
+\[ s^l_n = \frac{x_n}{2} \frac{1 - \sin^2(\beta_{n-1}^1)}{\beta_n^1 - \beta_{n-1}^1} \]
+\[ s^r_n = \frac{x_n}{2} \frac{1 - \sin^2(\beta_n^1)}{\beta_{n-1}^1 - \beta_n^1} \]
+
+So for speeds we have
+\[ s^l_n = \begin{dcases}
+    \frac{x_n}{2} \frac{\sin^2(\beta_{n-1}^1)}{\beta_{n-1}^1 - \beta_n^1}, & \left\lfloor
+    \frac{\beta_{n-1}^1}{\pi} \right\rfloor < \left\lfloor \frac{\beta_n^1}{\pi} \right\rfloor \\
+    \frac{x_n}{2} \frac{1 - \sin^2(\beta_{n-1}^1)}{\beta_n^1 - \beta_{n-1}^1}, & \left\lfloor
+    \frac{\beta_{n-1}^1}{\pi} + \frac{1}{2} \right\rfloor > \left\lfloor \frac{\beta_n^1}{\pi}
+    \right\rfloor \\
+    \min(s_n, 0), & \text{otherwise}
+\end{dcases} \]
+and
+\[ s^r_n = \begin{dcases}
+    \frac{x_n}{2} \frac{\sin^2(\beta_n^1)}{\beta_n^1 - \beta_{n-1}^1}, & \left\lfloor
+    \frac{\beta_{n-1}^1}{\pi} \right\rfloor < \left\lfloor \frac{\beta_n^1}{\pi} \right\rfloor \\
+    \frac{x_n}{2} \frac{1 - \sin^2(\beta_n^1)}{\beta_{n-1}^1 - \beta_n^1}, & \left\lfloor
+    \frac{\beta_{n-1}^1}{\pi} + \frac{1}{2} \right\rfloor > \left\lfloor \frac{\beta_n^1}{\pi}
+    \right\rfloor \\
+    \max(s_n, 0), & \text{otherwise}
+\end{dcases} \]
+
+A note about these formula before we move on, the structure of the wave can be quite complicated,
+possibly involving multiple shock and rarefaction waves mix and matched together, but here we simply
+take the average speed of the waves moving to the left and right, so it will work no matter the
+structure of the wave.
+
+\subsection{Update Formula}
+
+The fluctuations from the propagating waves after a time $\Delta t$ can be calculated by
+\[ \frac{\Delta t}{\Delta x} (s^r_n (\beta_n^1 - \beta_{n-1}^1) + s^l_{n+1} (\beta_{n+1}^1 -
+\beta_n^1)) \]
+for $\beta$, and
+\[ \frac{\Delta t}{\Delta x} (s^r_n (\alpha_n^1 - \alpha_{n-1}^1) + s^l_{n+1} (\alpha_{n+1}^1 -
+\alpha_n^1)) \]
+for $\alpha$. For further details on this, see Leveque's book. The other terms in the equation are
+source terms, and we will do the simplest method to deal with them, just calculate the term for each
+cell and multiply by the time step. Letting $\alpha_n^2 = \alpha(x,t_1 + \Delta t)$ and $\beta_n^2 =
+\beta(x,t_1 + \Delta t)$ for $x \in C_n$, we have
+\[ \alpha_n^2 = \alpha_n^1 - \Delta t \left( \frac{s^r_n (\alpha_n^1 - \alpha_{n-1}^1) + s^l_{n+1}
+(\alpha_{n+1}^1 - \alpha_n^1)}{\Delta x} + \sin(2\beta_n^1)\alpha_n^1 \right) \]
+and
+\[ \beta_n^2 = \beta_n^1 - \Delta t \left( \frac{s^r_n (\beta_n^1 - \beta_{n-1}^1) + s^l_{n+1}
+(\beta_{n+1}^1 - \beta_n^1)}{\Delta x} + \frac{3}{2}\sin^2(\beta_n^1) + \frac{\alpha_n}{2} \right)
+\]
+You could also potentially use a fractional step method to deal with the source terms, but I did not
+test it. Another potential improvement would be to add higher order correction terms. Both of these
+are outlined and discussed in Leveque's book.
+
+As a final note, here we assumed there is a linear relationship between the waves in $\alpha$ and
+$\beta$, for example, if there is a transonic rarefaction wave where half of $\beta$ move left and
+the other half moves right, then we assume that half of $\alpha$ move left and the other half moves
+right. We did this for simplicity and because it appears to work, but it could be beneficial to test
+other relationship.
+
+\end{document}
