@@ -81,12 +81,12 @@ function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
     sl = zeros(m, 1);
 
     % Positive wave speeds are moving to the right.
-    j = find(s(1:m) > 0);
+    j = s > 0;
     sr(j) = s(j);
 
     % Negative wave speeds are moving to the left.
-    j = find(s(2:m+1) < 0);
-    sl(j) = s(j+1);
+    j = s < 0;
+    sl(j) = s(j);
 
     % Next we apply fixes for transonic rarefaction waves, which have
     % components moving to both the left and right. It can be shown that
@@ -96,19 +96,19 @@ function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
     % and the minimum of sin squared beta between bl and br to be 0, so we
     % split the speeds with a mid point of 0.
     j = floor(bl ./ pi) < floor(br ./ pi);
-    jr = j(1:m);
-    jl = j(2:m+1);
-    sr(jr) = xo2(jr) .* sb2r(jr) ./ (br(jr) - bl(jr));
-    sl(jl) = xo2(jl) .* sb2l(jl) ./ (bl(jl) - br(jl));
+    sr(j) = xo2(j) .* sb2r(j) ./ (br(j) - bl(j));
+    sl(j) = xo2(j) .* sb2l(j) ./ (bl(j) - br(j));
 
     % This condition is necessary and sufficient for bl to be greater than
     % br and the maximum of sin squared beta between bl and br to be 1, so
     % we split the speeds with a mid point of 1.
     j = floor(bl ./ pi + 0.5) > floor(br ./ pi + 0.5);
-    jr = j(1:m);
-    jl = j(2:m+1);
-    sr(jr) = xo2(jr) .* (1 - sb2r(jr)) ./ (bl(jr) - br(jr));
-    sl(jl) = xo2(jl) .* (1 - sb2l(jl)) ./ (br(jl) - bl(jl));
+    sr(j) = xo2(j) .* (1 - sb2r(j)) ./ (bl(j) - br(j));
+    sl(j) = xo2(j) .* (1 - sb2l(j)) ./ (br(j) - bl(j));
+
+    % Next we remove waves moving off the end of the domain.
+    sr(m+1) = [];
+    sl(1) = [];
 
     % Finally, we simply use these speeds in our update formula.
     a2 = a1 - dt .* ((sr .* diff([a1(1); a1]) ...
