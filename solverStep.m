@@ -77,8 +77,8 @@ function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
     % waves.
 
     % First we split the previous waves speeds.
-    sr = zeros(m, 1);
-    sl = zeros(m, 1);
+    sr = zeros(m + 1, 1);
+    sl = zeros(m + 1, 1);
 
     % Positive wave speeds are moving to the right.
     j = s > 0;
