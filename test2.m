@@ -31,24 +31,25 @@ animate(xs, a);
 disp("Done a");
 uiwait(gcf);
 
-disp("Plotting al");
+disp("Plotting alpha");
 animate(xs, sqrt(1 - xs .^ 2 .* a));
-disp("Done al");
+disp("Done alpha");
 uiwait(gcf);
 
-disp("Plotting b");
+disp("Plotting beta");
 animate(xs, b);
-disp("Done b");
+disp("Done beta");
 uiwait(gcf);
 
-disp("Plotting p");
+disp("Plotting rho");
 animate(xs(2:end) - dx/2, diff(xs .^ 3 .* (sin(b) .^ 2 + a)) ./ (8*pi*dx .* (xs(2:end) - dx/2) .^ 2), [0, 0.3]);
-disp("Done p");
+disp("Done rho");
 uiwait(gcf);
 
 disp("Plotting p");
 animate(xs, p, [0, 0.3]);
 disp("Done p");
+uiwait(gcf);
 
 function animate(xs, y, l)
 
