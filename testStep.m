@@ -35,8 +35,12 @@ for i = 1:n
         p.YData = plotf(a2, b2);
         drawnow limitrate;
     catch e
-        warning("Not able to update plot, assumed that user ended early.");
-        break
+        if e.identifier == "MATLAB:class:InvalidHandle"
+            warning("Not able to update plot, assumed that user ended early.");
+            break
+        else
+            rethrow(e);
+        end
     end
 
     a1 = a2;

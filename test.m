@@ -25,26 +25,23 @@ bmid = (b(:,1:end-1) + b(:,2:end)) ./ 2;
 p = (diff(b, 1, 2) + diff(a, 1, 2) ./ sin(2 .* bmid)) ./ (-4*pi*dt);
 
 % Plays a short movie of one of the solution values.
-disp("Showing a");
+figure(Name="Animation of a");
 animate(xs, a);
-disp("Done a");
-uiwait(gcf);
+uiwait(msgbox("Press OK to continue.", "Done plotting a"));
 
-disp("Showing alpha");
+figure(Name="Animation of alpha");
 animate(xs, sqrt(1 - xs .^ 2 .* a));
-disp("Done alpha");
-uiwait(gcf);
+uiwait(msgbox("Press OK to continue.", "Done plotting alpha"));
 
-disp("Showing beta");
+figure(Name="Animation of beta");
 animate(xs, b);
-disp("Done beta");
-uiwait(gcf);
+uiwait(msgbox("Press OK to continue.", "Done plotting beta"));
 
-disp("Showing rho");
+figure(Name="Animation of rho");
 animate(xs, p, [0, 0.2]);
-disp("Done rho");
+uiwait(msgbox("Press OK to continue.", "Done plotting rho"));
 
-function animate(xs, y, l)
+function f = animate(xs, y, l)
 
     p = plot(xs, y(:,1));
     xlim(xs([1, end]));
@@ -54,7 +51,16 @@ function animate(xs, y, l)
     n = size(y, 2);
 
     for i = 1:20:n
-        p.YData = y(:,i);
+        try
+            p.YData = y(:,i);
+        catch e
+            if e.identifier == "MATLAB:class:InvalidHandle"
+                warning("Not able to update plot, assumed that user ended early.");
+                break
+            else
+                rethrow(e);
+            end
+        end
         drawnow;
     end
 

@@ -27,30 +27,21 @@ bmid = (b(:,1:end-1) + b(:,2:end)) ./ 2;
 p = (diff(b, 1, 2) + diff(a, 1, 2) ./ sin(2 .* bmid)) ./ (-4*pi*dt);
 
 % Plays a short movie of the solution values.
-disp("Plotting a");
+figure(Name="Animation of a");
 animate(xs, a);
-disp("Done a");
-uiwait(gcf);
+uiwait(msgbox("Press OK to continue.", "Done plotting a"));
 
-disp("Plotting alpha");
+figure(Name="Animation of alpha");
 animate(xs, sqrt(1 - xs .^ 2 .* a));
-disp("Done alpha");
-uiwait(gcf);
+uiwait(msgbox("Press OK to continue.", "Done plotting alpha"));
 
-disp("Plotting beta");
+figure(Name="Animation of beta");
 animate(xs, b);
-disp("Done beta");
-uiwait(gcf);
+uiwait(msgbox("Press OK to continue.", "Done plotting beta"));
 
-disp("Plotting rho");
+figure(Name="Animation of rho");
 animate(xs(2:end) - dx/2, diff(xs .^ 3 .* (sin(b) .^ 2 + a)) ./ (8*pi*dx .* (xs(2:end) - dx/2) .^ 2), [0, 0.3]);
-disp("Done rho");
-uiwait(gcf);
-
-disp("Plotting p");
-animate(xs, p, [0, 0.3]);
-disp("Done p");
-uiwait(gcf);
+uiwait(msgbox("Press OK to continue.", "Done plotting rho"));
 
 function animate(xs, y, l)
 
@@ -62,7 +53,16 @@ function animate(xs, y, l)
     n = size(y, 2);
 
     for i = 1:5:n
-        p.YData = y(:,i);
+        try
+            p.YData = y(:,i);
+        catch e
+            if e.identifier == "MATLAB:class:InvalidHandle"
+                warning("Not able to update plot, assumed that user ended early.");
+                break
+            else
+                rethrow(e);
+            end
+        end
         drawnow;
     end
 
