@@ -14,7 +14,8 @@ xs = (dx/2:dx:a0).';
 mi = 8*pi*p0/3*x0^3 ./ xs .^ 3;
 mi(xs < x0) = 8*pi*p0/3;
 
-ai = sin(4*pi/a0 .* xs) ./ (a0 .* xs);
+ai = 2/3*p0*x0 ./ xs .* sin(4*pi/x0 .* xs);
+ai(xs > x0) = 0;
 
 bi = -asin(sqrt(mi - ai));
 
