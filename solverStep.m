@@ -55,13 +55,18 @@ function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
     aend = (1 + 2 * (bend - b1(m)) * sin(2 * b1(m)) ...
         / (3 * sb2(m) + a1(m))) * a1(m);
 
+    % Boundary conditions on the left, set so that a and b are constant in
+    % space.
+    a0 = a1(1);
+    b0 = b1(1);
+
     % Values of beta to the left and right of each cell interface.
-    bl = [b1(1); b1];
+    bl = [b0; b1];
     br = [b1; bend];
 
     % Values of sin of beta squared to the left and right of each cell
     % interface.
-    sb2l = [sb2(1); sb2];
+    sb2l = [sin(b0)^2; sb2];
     sb2r = [sb2; sb2end];
 
     % Next, we calculate the wave speeds.
@@ -111,7 +116,7 @@ function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
     sl(1) = [];
 
     % Finally, we simply use these speeds in our update formula.
-    a2 = a1 - dt .* ((sr .* diff([a1(1); a1]) ...
+    a2 = a1 - dt .* ((sr .* diff([a0; a1]) ...
         + sl .* diff([a1; aend])) ./ dx + sin(2 .* b1) .* a1);
     b2 = b1 - dt .* ((sr .* diff(bl) + sl .* diff(br)) ./ dx ...
         + 1.5 .* sb2 + 0.5 .* a1);

@@ -56,13 +56,18 @@ function [a,b] = solver(ai, bi, x0, dx, dt, n)
         aend = (1 + 2 * (bend - b(m,i)) * sin(2 * b(m,i)) ...
             / (3 * sb2(m) + a(m,i))) * a(m,i);
 
+        % Boundary conditions on the left, set so that a and b are constant in
+        % space.
+        a0 = a(1,i);
+        b0 = b(1,i);
+
         % Values of beta to the left and right of each cell interface.
-        bl = [b(1,i); b(:,i)];
+        bl = [b0; b(:,i)];
         br = [b(:,i); bend];
 
         % Values of sin of beta squared to the left and right of each cell
         % interface.
-        sb2l = [sb2(1); sb2];
+        sb2l = [sin(b0)^2; sb2];
         sb2r = [sb2; sb2end];
 
         % Next, we calculate the wave speeds.
@@ -112,7 +117,7 @@ function [a,b] = solver(ai, bi, x0, dx, dt, n)
         sl(1) = [];
 
         % Finally, we simply use these speeds in our update formula.
-        a(:,i+1) = a(:,i) - dt .* ((sr .* diff([a(1,i); a(:,i)]) ...
+        a(:,i+1) = a(:,i) - dt .* ((sr .* diff([a0; a(:,i)]) ...
             + sl .* diff([a(:,i); aend])) ./ dx ...
             + sin(2 .* b(:,i)) .* a(:,i));
         b(:,i+1) = b(:,i) - dt .* ((sr .* diff(bl) + sl .* diff(br)) ./ dx ...
