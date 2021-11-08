@@ -55,6 +55,12 @@ function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
     aend = (1 + 2 * (bend - b1(m)) * sin(2 * b1(m)) ...
         / (3 * sb2(m) + a1(m))) * a1(m);
 
+    % Check to make sure the boundary conditions are real, if not throws an
+    % error. Different boundary conditions could be used if this becomes an
+    % issue.
+    assert(isreal(bend), "PDESolver:Step:ImaginaryNumber", ...
+        "Ran into the imaginary number whlie computing boundary conditions.");
+
     % Boundary conditions on the left, set so that a and b are constant in
     % space.
     a0 = a1(1);
@@ -120,10 +126,5 @@ function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
         + sl .* diff([a1; aend])) ./ dx + sin(2 .* b1) .* a1);
     b2 = b1 - dt .* ((sr .* diff(bl) + sl .* diff(br)) ./ dx ...
         + 1.5 .* sb2 + 0.5 .* a1);
-
-    % As a final check, we make sure the solution is real and if not we
-    % throw an error.
-    assert(isreal(a2) && isreal(b2), "PDESolve:Step:ImaginaryNumber", ...
-        "Ran into the imaginary number.");
 
 end

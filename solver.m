@@ -56,6 +56,18 @@ function [a,b] = solver(ai, bi, x0, dx, dt, n)
         aend = (1 + 2 * (bend - b(m,i)) * sin(2 * b(m,i)) ...
             / (3 * sb2(m) + a(m,i))) * a(m,i);
 
+        % Checks to see if the boundary conditions is real, if not gives the
+        % user a warning and ends the computation early, truncating the results.
+        % Different boundary conditions could be used if this becomes an issue.
+        if ~isreal(bend)
+            a = a(:,1:i-1);
+            b = b(:,1:i-1);
+            warning("PDESolve:ImaginaryNumber", ...
+                "Ran into the imaginary number when computing the boundary " ...
+                + "conditions, truncating solutions");
+            break
+        end
+
         % Boundary conditions on the left, set so that a and b are constant in
         % space.
         a0 = a(1,i);
@@ -122,16 +134,6 @@ function [a,b] = solver(ai, bi, x0, dx, dt, n)
             + sin(2 .* b(:,i)) .* a(:,i));
         b(:,i+1) = b(:,i) - dt .* ((sr .* diff(bl) + sl .* diff(br)) ./ dx ...
             + 1.5 .* sb2 + 0.5 .* a(:,i));
-
-        % As a final check, we make sure the solution is real and if not we
-        % truncate the output array and end early, warning the user.
-        if ~(isreal(b(:,i+1)) && isreal(a(:,i+1)))
-            a = a(:,1:i);
-            b = b(:,1:i);
-            warning("PDESolve:ImaginaryNumber", ...
-                "Ran into the imaginary number, ending early.");
-            break
-        end
 
     end
 
