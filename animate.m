@@ -37,8 +37,8 @@ function animate(x, y, rate, limits)
             end
         catch e
             if e.identifier == "MATLAB:class:InvalidHandle"
-                warning("Not able to update plot, " ...
-                    + "assumed that user ended early.");
+                warning("Animate:FailedToUpdatePlot", ...
+                    "Not able to update plot, assumed that user ended early.");
                 break
             else
                 rethrow(e);
