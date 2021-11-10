@@ -6,4 +6,4 @@ notes.out
 notes.pdf
 notes.synctex.gz
 plots/*
-experimental/solve.so
+experimental/libsolve.so
