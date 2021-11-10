@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "solve.h"
+#include "libsolve.h"
 
 void speed(double x, double bl, double br, double *sl, double *sr);
 
@@ -33,7 +33,7 @@ void speed(double const x, double const bl, double const br, double *sl,
 
 }
 
-bool solveStep(intmax_t n, double const a1[n], double const b1[n],
+bool solveStep(uintmax_t n, double const a1[n], double const b1[n],
         double a2[n], double b2[n], double const x0, double const dx,
         double const dt) {
 
@@ -48,7 +48,7 @@ bool solveStep(intmax_t n, double const a1[n], double const b1[n],
     double fa = sr * (ar - al);
     double fb = sr * (br - bl);
 
-    for (intmax_t i = 1; i < n; ++i) {
+    for (uintmax_t i = 1; i < n; ++i) {
 
         al = a1[i-1];
         ar = a1[i];
@@ -86,16 +86,16 @@ bool solveStep(intmax_t n, double const a1[n], double const b1[n],
 
 }
 
-intmax_t solve(intmax_t m, intmax_t n, double const a0[m],
+uintmax_t solve(uintmax_t m, uintmax_t n, double const a0[m],
         double const b0[m], double a[n][m], double b[n][m], double const x0,
         double const dx, double const dt) {
 
-    for (intmax_t i = 0; i < m; ++i) {
+    for (uintmax_t i = 0; i < m; ++i) {
         a[0][i] = a0[i];
         b[0][i] = b0[i];
     }
 
-    for (intmax_t i = 1; i < n; ++i) {
+    for (uintmax_t i = 1; i < n; ++i) {
         if (!solveStep(m, a[i-1], b[i-1], a[i], b[i], x0, dx, dt)) {
             return i;
         }

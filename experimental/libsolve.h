@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 bool solveStep(
-        intmax_t n,
+        uintmax_t n,
         double const a1[n],
         double const b1[n],
         double a2[n],
@@ -13,9 +13,9 @@ bool solveStep(
         double dx,
         double dt);
 
-intmax_t solve(
-        intmax_t m,
-        intmax_t n,
+uintmax_t solve(
+        uintmax_t m,
+        uintmax_t n,
         double const a0[m],
         double const b0[m],
         double a[n][m],
