@@ -37,7 +37,7 @@ function [a,b] = solver(ai, bi, x0, dx, dt, n)
     % Array of locations of the cell interfaces, and those numbers over 2. Not
     % necessary to calculate "x over 2" here, done for efficiency reasons.
     x = (x0 : dx : x0 + m * dx).';
-    xo2 = 0.5 .* x;
+    xo2 = x ./ 2;
 
     for i = 1:n-1
 
@@ -133,7 +133,7 @@ function [a,b] = solver(ai, bi, x0, dx, dt, n)
             + sl .* diff([a(:,i); aend])) ./ dx ...
             + sin(2 .* b(:,i)) .* a(:,i));
         b(:,i+1) = b(:,i) - dt .* ((sr .* diff(bl) + sl .* diff(br)) ./ dx ...
-            + 1.5 .* sb2 + 0.5 .* a(:,i));
+            + 1.5 .* sb2 + a(:,i)./2);
 
     end
 

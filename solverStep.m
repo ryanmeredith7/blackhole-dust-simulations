@@ -28,7 +28,7 @@ function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
             = (x0 : dx : x0 + length(a1) * dx).'
 
         % x over 2.
-        xo2 (:,1) {mustBeNonempty, mustBeNonnegative} = 0.5 .* x
+        xo2 (:,1) {mustBeNonempty, mustBeNonnegative} = x ./ 2
 
     end
 
@@ -125,6 +125,6 @@ function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
     a2 = a1 - dt .* ((sr .* diff([a0; a1]) ...
         + sl .* diff([a1; aend])) ./ dx + sin(2 .* b1) .* a1);
     b2 = b1 - dt .* ((sr .* diff(bl) + sl .* diff(br)) ./ dx ...
-        + 1.5 .* sb2 + 0.5 .* a1);
+        + 1.5 .* sb2 + a1 ./ 2);
 
 end
