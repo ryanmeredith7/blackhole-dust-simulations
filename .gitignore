@@ -7,3 +7,4 @@ notes.pdf
 notes.synctex.gz
 plots/*
 experimental/libsolve.so
+experimental/solve.mexa64
