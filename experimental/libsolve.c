@@ -16,10 +16,11 @@
  * sl will contain the speed to the left
  * sr will contain the speed to the right
  */
-void speed(double x, double bl, double br, double *sl, double *sr);
+void speed(const double x, const double bl, const double br,
+           double *restrict sl, double *restrict sr);
 
-void speed(const double x, const double bl, const double br, double *sl,
-           double *sr) {
+void speed(const double x, const double bl, const double br,
+           double *restrict sl, double *restrict sr) {
 
     // The outer if check for rarefaction waves and calculates the appropriate
     // speeds if there is a rarefaction wave.
@@ -33,7 +34,7 @@ void speed(const double x, const double bl, const double br, double *sl,
 
         // In this case the wave is only in one direction, so we calculate that
         // in s.
-        double s;
+        register double s;
         if (bl == br) {
             s = x / 2 * sin(2*bl);
         } else {
@@ -61,18 +62,18 @@ bool solveStep(uintmax_t n, const double a1[n], const double b1[n],
 
     // Variables that hold the left and right values of alpha and beta. At the
     // left boundary we make both constant in space.
-    double al = a1[0];
-    double ar = a1[0];
-    double bl = b1[0];
-    double br = b1[0];
+    register double al = a1[0];
+    register double ar = a1[0];
+    register double bl = b1[0];
+    register double br = b1[0];
 
     // Variables to hold the wave speeds to the left and right.
     double sl, sr;
     speed(x0, bl, br, &sl, &sr);
 
     // Variables to hold the fluctuations to the right.
-    double fa = sr * (ar - al);
-    double fb = sr * (br - bl);
+    register double fa = sr * (ar - al);
+    register double fb = sr * (br - bl);
 
     // Here we loop over each cell interface.
     for (uintmax_t i = 1; i < n; ++i) {
@@ -91,7 +92,7 @@ bool solveStep(uintmax_t n, const double a1[n], const double b1[n],
         // fluctuations to the left from this interface.
         a2[i-1] = al - dt * ((fa + sl*(ar - al))/dx + al*sin(2*bl));
         b2[i-1] = bl - dt * ((fb + sl*(br - bl))/dx + 1.5*pow(sin(bl), 2)
-                + al/2);
+                             + al/2);
 
         // Store the fluctuations to the right for the next step.
         fa = sr * (ar - al);
@@ -107,7 +108,8 @@ bool solveStep(uintmax_t n, const double a1[n], const double b1[n],
     // alpha and beta will be constant at the end points when the waves are
     // moving to the left. sb2 is sin(b)^2 at the boundary, we need to check
     // that this value makes sense before continuing.
-    double sb2 = pow(sin(bl), 2) - dx/(x0 + n*dx)*(3*pow(sin(bl), 2) + al);
+    register double sb2 = pow(sin(bl), 2)
+                          - dx / (x0 + n*dx) * (3*pow(sin(bl), 2) + al);
     if (-1 <= sb2 && sb2 <= 1) {
         br = -asin(sqrt(sb2));
     } else {
