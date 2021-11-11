@@ -2,8 +2,12 @@
 #include "mex.h"
 #include "libsolve.c"
 
+// MATLAB entry point.
 void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
 
+
+    // Checks that the function was called with the correct number of inputs and
+    // outputs.
     if (nin != 6) {
         mexErrMsgIdAndTxt("PDESolve:ArgumentError",
                 "Requires 6 input arguments");
@@ -13,6 +17,7 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
         mexErrMsgIdAndTxt("PDESolve:OutputError", "Requires 2 outputs");
     }
 
+    // Validates and obtains the first two arguments.
     if (
             !mxIsDouble(in[0]) || mxIsEmpty(in[0]) || mxIsComplex(in[0]) ||
             !mxIsDouble(in[1]) || mxIsEmpty(in[1]) || mxIsComplex(in[1])
@@ -47,6 +52,7 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
         }
     }
 
+    // Validates and obtains the next 3 arguments.
     if (
             !mxIsNumeric(in[2]) || !mxIsScalar(in[2]) || mxIsComplex(in[2]) ||
             !mxIsNumeric(in[3]) || !mxIsScalar(in[3]) || mxIsComplex(in[3]) ||
@@ -70,6 +76,7 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
                 "Steps in time and space must be positive");
     }
 
+    // Validates and obtains the last argument.
     if (!mxIsUint64(in[5]) || !mxIsScalar(in[5]) || mxIsComplex(in[5])) {
         mexErrMsgIdAndTxt("PDESolve:ARgumentError",
                 "Argument 6 must be a real scalar uint64, "
@@ -83,23 +90,29 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
                 "Number of time steps must be positive");
     }
 
-    double (*a1)[m] = mxMalloc(n * m * sizeof(double));
-    double (*b1)[m] = mxMalloc(n * m * sizeof(double));
+    // Allocates 2D arrays to hold the results of solve.
+    double (*a1)[m] = mxMalloc(n * sizeof(double[m]));
+    double (*b1)[m] = mxMalloc(n * sizeof(double[m]));
 
+    // Applies solve, this is the main computation.
     uintmax_t k = solve(m, n, ai, bi, a1, b1, x0, dx, dt);
 
+    // Warns user if the requested number of steps was not completed.
     if (k != n) {
         mexWarnMsgIdAndTxt("PDESolve:ImaginaryNumber",
                 "Ran into the imaginary number while computing the boundary "
                 "conditions, truncating result");
     }
 
+    // Creates MATLAB arrayl to put the output into.
     out[0] = mxCreateDoubleMatrix(m, k, mxREAL);
     out[1] = mxCreateDoubleMatrix(m, k, mxREAL);
 
+    // Gets access to the MATLAB arrays in the form of 1D C arrays.
     double *a2 = mxGetDoubles(out[0]);
     double *b2 = mxGetDoubles(out[1]);
 
+    // Puts the output into the MATLAB arrays.
     for (uintmax_t i = 0; i < k; ++i) {
         for (uintmax_t j = 0; j < m; ++j) {
             a2[i * m + j] = a1[i][j];
@@ -107,6 +120,7 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
         }
     }
 
+    // Frees the no longer needed 2D arrays.
     mxFree(a1);
     mxFree(b1);
 
