@@ -104,7 +104,7 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
                 "conditions, truncating result");
     }
 
-    // Creates MATLAB arrayl to put the output into.
+    // Creates MATLAB arrays to put the output into.
     out[0] = mxCreateDoubleMatrix(m, k, mxREAL);
     out[1] = mxCreateDoubleMatrix(m, k, mxREAL);
 

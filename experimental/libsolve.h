@@ -25,6 +25,8 @@
  * a2 must be an array of length n that the updated alpha will be put into
  *
  * b2 must be an array of length n that the updated beta will be put into
+ *
+ * Returns true if the function was successful and false if it wasn't.
  */
 bool solveStep(
         uintmax_t n,
@@ -37,6 +39,7 @@ bool solveStep(
         double dt);
 
 /* This function will solve the PDE for n steps.
+ *
  * Inputs:
  *
  * m is the length of the input arrays and the inner dimension of the 2D output
@@ -60,6 +63,8 @@ bool solveStep(
  * a must be an m by n 2D array that alpha will be put into
  *
  * b must be an m by n 2D array that beta will be put into
+ *
+ * Returns the number of suuccessfuly completed steps.
  */
 uintmax_t solve(
         uintmax_t m,
