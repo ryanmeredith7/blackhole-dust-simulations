@@ -41,7 +41,7 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
     double *bi = mxGetDoubles(in[1]);
 
     for (uintmax_t i = 0; i < m; ++i) {
-        if (!(mxIsFinite(ai[i]) && mxIsFinite(bi[i]))) {
+        if (!mxIsFinite(ai[i]) || !mxIsFinite(bi[i])) {
             mexErrMsgIdAndTxt("PDESolve:ArgumentError",
                     "Initial data vectors must be finite");
         }
@@ -83,8 +83,8 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
                 "Number of time steps must be positive");
     }
 
-    double a1[n][m];
-    double b1[n][m];
+    double (*a1)[m] = mxMalloc(n * m * sizeof(double));
+    double (*b1)[m] = mxMalloc(n * m * sizeof(double));
 
     uintmax_t k = solve(m, n, ai, bi, a1, b1, x0, dx, dt);
 
@@ -101,10 +101,13 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
     double *b2 = mxGetDoubles(out[1]);
 
     for (uintmax_t i = 0; i < k; ++i) {
-        for (uintmax_t j = 0; i < m; ++j) {
+        for (uintmax_t j = 0; j < m; ++j) {
             a2[i * m + j] = a1[i][j];
             b2[i * m + j] = b1[i][j];
         }
     }
+
+    mxFree(a1);
+    mxFree(b1);
 
 }
