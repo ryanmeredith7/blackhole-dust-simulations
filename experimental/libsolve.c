@@ -4,6 +4,11 @@
 
 #include "libsolve.h"
 
+// Type to hold speeds to both the left and right.
+typedef struct {
+    double l, r;
+} speeds;
+
 /* This function calculates the left and right wave speeds given the location,
  * and left and right beta values.
  *
@@ -13,46 +18,71 @@
  * br is the right value of beta
  *
  * Outputs:
- * sl will contain the speed to the left
- * sr will contain the speed to the right
+ * Returns a speeds struct s with speeds to the left and right
  */
-void speed(const double x, const double bl, const double br,
-           double *restrict sl, double *restrict sr);
+speeds speed(double x, double bl, double br);
 
-void speed(const double x, const double bl, const double br,
-           double *restrict sl, double *restrict sr) {
+speeds speed(const double x, const double bl, const double br) {
+
+    speeds s;
 
     // The outer if check for rarefaction waves and calculates the appropriate
     // speeds if there is a rarefaction wave.
     if (floor(bl / M_PI) < floor(br / M_PI)) {
-        *sl = x / 2 * pow(sin(bl), 2) / (bl - br);
-        *sr = x / 2 * pow(sin(br), 2) / (br - bl);
+        s.l = x / 2 * pow(sin(bl), 2) / (bl - br);
+        s.r = x / 2 * pow(sin(br), 2) / (br - bl);
     } else if (floor(bl / M_PI + 0.5) > floor(br / M_PI + 0.5)) {
-        *sl = x / 2 * pow(cos(bl), 2) / (br - bl);
-        *sr = x / 2 * pow(cos(br), 2) / (bl - br);
+        s.l = x / 2 * pow(cos(bl), 2) / (br - bl);
+        s.r = x / 2 * pow(cos(br), 2) / (bl - br);
     } else {
 
         // In this case the wave is only in one direction, so we calculate that
         // in s.
-        register double s;
+        register double sp;
         if (bl == br) {
-            s = x / 2 * sin(2*bl);
+            sp = x / 2 * sin(2*bl);
         } else {
-            s = x / 2 * (pow(sin(br), 2) - pow(sin(bl), 2)) / (br - bl);
+            sp = x / 2 * (pow(sin(br), 2) - pow(sin(bl), 2)) / (br - bl);
         }
 
         // If the wave speed is negative it moves left, if it is positive it
         // moves right.
-        if (s < 0) {
-            *sl = s;
-            *sr = 0;
+        if (sp < 0) {
+            s.l = sp;
+            s.r = 0;
         } else {
-            *sl = 0;
-            *sr = s;
+            s.l = 0;
+            s.r = sp;
         }
 
     }
 
+    return s;
+
+}
+
+// Simple function to calculate fluctuations from wave speed and left and right
+// value of the wave.
+double flux(double speed, double left, double right);
+
+double flux(const double s, const double l, const double r) {
+    return s * (r - l);
+}
+
+// Function that encapsulates the update formula for alpha.
+double updateA(double flux, double a, double b, double dx, double dt);
+
+double updateA(const double f, const double a, const double b,
+               const double dx, const double dt) {
+    return a - dt * (f / dx + a * sin(2 * b));
+}
+
+// Function that encapsulates the update formula for beta.
+double updateB(double flux, double a, double b, double dx, double dt);
+
+double updateB(const double f, const double a, const double b,
+               const double dx, const double dt) {
+    return b - dt * (f / dx + 1.5 * pow(sin(b), 2) + a / 2);
 }
 
 // One step of solution, see interface file for more details.
@@ -68,12 +98,11 @@ bool solveStep(uintmax_t n, const double a1[n], const double b1[n],
     register double br = b1[0];
 
     // Variables to hold the wave speeds to the left and right.
-    double sl, sr;
-    speed(x0, bl, br, &sl, &sr);
+    register speeds s = speed(x0, bl, br);
 
     // Variables to hold the fluctuations to the right.
-    register double fa = sr * (ar - al);
-    register double fb = sr * (br - bl);
+    register double fa = flux(s.r, al, ar);
+    register double fb = flux(s.r, bl, br);
 
     // Here we loop over each cell interface.
     for (uintmax_t i = 1; i < n; ++i) {
@@ -85,18 +114,17 @@ bool solveStep(uintmax_t n, const double a1[n], const double b1[n],
         br = b1[i];
 
         // Calculate the speeds at this interface.
-        speed(x0 + i * dx, bl, br, &sl, &sr);
+        s = speed(x0 + i * dx, bl, br);
 
         // Apply the updates to the cell on the left of the interface using
         // fluctuations to the right from the previous interface and the
         // fluctuations to the left from this interface.
-        a2[i-1] = al - dt * ((fa + sl*(ar - al))/dx + al*sin(2*bl));
-        b2[i-1] = bl - dt * ((fb + sl*(br - bl))/dx + 1.5*pow(sin(bl), 2)
-                             + al/2);
+        a2[i-1] = updateA(fa + flux(s.l, al, ar), al, bl, dx, dt);
+        b2[i-1] = updateB(fb + flux(s.l, bl, br), al, bl, dx, dt);
 
         // Store the fluctuations to the right for the next step.
-        fa = sr * (ar - al);
-        fb = sr * (br - bl);
+        fa = flux(s.r, al, ar);
+        fb = flux(s.r, bl, br);
 
     }
 
@@ -119,10 +147,10 @@ bool solveStep(uintmax_t n, const double a1[n], const double b1[n],
 
     // Now we just do the usual calculation of the wave speeds and update
     // formula.
-    speed(x0 + n * dx, bl, br, &sl, &sr);
+    s = speed(x0 + n * dx, bl, br);
 
-    a2[n-1] = al - dt * ((fa + sl*(ar - al))/dx + al*sin(2*bl));
-    b2[n-1] = bl - dt * ((fb + sl*(br - bl))/dx + 1.5*pow(sin(bl), 2) + al/2);
+    a2[n-1] = updateA(fa + flux(s.l, al, ar), al, bl, dx, dt);
+    b2[n-1] = updateB(fb + flux(s.l, bl, br), al, bl, dx, dt);
 
     return true;
 
