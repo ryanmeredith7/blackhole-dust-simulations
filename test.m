@@ -4,7 +4,7 @@ x0 = 4;
 a0 = 5;
 dx = 0.01;
 dt = 0.001;
-n = 30000;
+n = uint64(30000);
 
 % Midpoints of the cells.
 xs = (dx/2:dx:a0).';
@@ -24,19 +24,21 @@ bi(xs < x0) = -asin(sqrt(8*pi*p0/3 - a0 ^ -2));
 bmid = (b(:,1:end-1) + b(:,2:end)) ./ 2;
 p = (diff(b, 1, 2) + diff(a, 1, 2) ./ sin(2 .* bmid)) ./ (-4*pi*dt);
 
+speed = 20;
+
 % Plays a short movie of one of the solution values.
 figure(Name="Animation of a");
-animate(xs, a, 20);
+animate(xs, a, speed);
 uiwait(msgbox("Press OK to continue.", "Done plotting a"));
 
 figure(Name="Animation of alpha");
-animate(xs, sqrt(1 - xs .^ 2 .* a), 20);
+animate(xs, 1 - xs .^ 2 .* a, speed);
 uiwait(msgbox("Press OK to continue.", "Done plotting alpha"));
 
 figure(Name="Animation of beta");
-animate(xs, b, 20);
+animate(xs, b, speed);
 uiwait(msgbox("Press OK to continue.", "Done plotting beta"));
 
 figure(Name="Animation of rho");
-animate(xs, p, 20, [0, 0.2]);
+animate(xs, p, speed, [0, 0.2]);
 uiwait(msgbox("Press OK to continue.", "Done plotting rho"));
