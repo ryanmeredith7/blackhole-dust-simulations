@@ -60,8 +60,8 @@ function [a,b] = solver(ai, bi, x0, dx, dt, n)
         % user a warning and ends the computation early, truncating the results.
         % Different boundary conditions could be used if this becomes an issue.
         if ~isreal(bend)
-            a = a(:,1:i-1);
-            b = b(:,1:i-1);
+            a = a(:,1:i);
+            b = b(:,1:i);
             warning("PDESolve:ImaginaryNumber", ...
                 "Ran into the imaginary number when computing the boundary " ...
                 + "conditions, truncating solutions");
