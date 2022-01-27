@@ -20,5 +20,5 @@ b = -asin(sqrt(8*pi*p0/3*x0^3 ./ xm .^ 3 - a));
 a(xm < x0) = a0 ^ -2;
 b(xm < x0) = -asin(sqrt(8*pi*p0/3 - a0 ^ -2));
 
-[t1,t2] = time(a, b, x0, dx, dt);
+[t1,t2] = timer(a, b, x0, dx, dt);
 disp([t1,t2]);

@@ -1,4 +1,4 @@
-function [t1,t2] = time(a, b, x0, dx, dt)
+function [t1,t2] = timer(a, b, x0, dx, dt)
 
     arguments
 
