@@ -11,7 +11,7 @@ MATLAB click on New>Project>From Git and paste the link to this repository
 
 ![Popup Menu](photos/RepoPath.png)
 
-Note that the "Sandbox" field allows you to change where the project will got on your local machine.
+Note that the "Sandbox" field allows you to change where the project will go on your local machine.
 Once you have the project in MATLAB, you can update to future changes by simply clicking the "Pull"
 button under the project tab.
 
@@ -35,7 +35,7 @@ recognizable by MATLAB, you can read more about that
 [here](https://www.mathworks.com/support/requirements/supported-compilers.html). To use them you
 need to run the build script
 
-    >>> build
+    >> build
 
 and then you need to change the scripts in which you wish to use the C functions in. For
 example, if you wish to use the C function `solve` in the random test script, then you need to
@@ -47,5 +47,5 @@ to
 
     [a, b] = solve(ai, bi, 0, dx, dt, n);
 
-At the moment, the MATLAB function end in an "r" whereas the C functions do not, but this may be
+At the moment, the MATLAB functions end in an "r" whereas the C functions do not, but this may be
 subject to change.
