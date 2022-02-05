@@ -1,5 +1,5 @@
 % This function solves a PDE relating to black holes.
-function [a,b] = solver(ai, bi, x0, dx, dt, n)
+function [a,b] = solve(ai, bi, x0, dx, dt, n)
 
     arguments
 

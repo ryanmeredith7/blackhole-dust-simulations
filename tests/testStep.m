@@ -29,7 +29,7 @@ ylim([0, 0.2]);
 
 for i = 1:n
 
-    [a2,b2] = solverStep(a1, b1, x0, dx, dt, x, xo2);
+    [a2,b2] = solveStep(a1, b1, x0, dx, dt, x, xo2);
 
     try
         p.YData = plotf(a2, b2);

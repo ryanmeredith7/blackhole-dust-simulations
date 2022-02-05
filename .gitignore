@@ -6,7 +6,4 @@ notes/notes.out
 notes/notes.pdf
 notes/notes.synctex.gz
 plots/*
-experimental/libsolve.so
-experimental/solve.mexa64
-solve.mexa64
-lib/solve.mexa64
+lib/*.mex*

@@ -37,15 +37,19 @@ need to run the build script
 
     >> build
 
-and then you need to change the scripts in which you wish to use the C functions in. For
-example, if you wish to use the C function `solve` in the random test script, then you need to
-change line 23 of `tests/randtest.m` from
+and then the C function should override the MATLAB functions when used. To confirm this, you can use
+the commend `which`, for example to see which function is being used when you call `solve`, run the
+command
 
-    [a, b] = solver(ai, bi, 0, dx, dt, n);
+    >> which solve
 
-to
+if the file has a `.m` extension then it is a MATLAB function and if has some sort of `.mex`
+extension then it is a C function. To view more information you could also run
 
-    [a, b] = solve(ai, bi, 0, dx, dt, n);
+    >> which solve -all
 
-At the moment, the MATLAB functions end in an "r" whereas the C functions do not, but this may be
-subject to change.
+where it will also list shadowed functions. To switch back to the MATLAB function, for now you need
+to manually delete the created `.mex` files in the `lib` folder.
+
+If you use the C functions, you will likely need to rerun the `build` script after getting the
+latest software with pull to make sure you are using the latest version.

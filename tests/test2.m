@@ -20,7 +20,7 @@ ai(xs > x0) = 0;
 bi = -asin(sqrt(mi - ai));
 
 % Calls the function that solves the equations.
-[a, b] = solver(ai, bi, 0, dx, dt, n);
+[a, b] = solve(ai, bi, 0, dx, dt, n);
 
 % Calculates the denssity.
 bmid = (b(:,1:end-1) + b(:,2:end)) ./ 2;

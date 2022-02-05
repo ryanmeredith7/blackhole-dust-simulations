@@ -1,4 +1,4 @@
-function [t1,t2] = timer(a, b, x0, dx, dt)
+function [t1,t2] = time(a, b, x0, dx, dt)
 
     arguments
 
@@ -44,7 +44,7 @@ function [t1,t2] = timer(a, b, x0, dx, dt)
             end
         end
 
-        [a,b] = solverStep(a, b, x0, dx, dt, x, xo2);
+        [a,b] = solveStep(a, b, x0, dx, dt, x, xo2);
         t = t + dt;
 
     end

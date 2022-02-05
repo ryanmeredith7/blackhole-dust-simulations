@@ -18,7 +18,7 @@ ai(xs < x0) = a0 ^ -2;
 bi(xs < x0) = -asin(sqrt(8*pi*p0/3 - a0 ^ -2));
 
 % Calls the function that solves the equations.
-[a, b] = solver(ai, bi, 0, dx, dt, n);
+[a, b] = solve(ai, bi, 0, dx, dt, n);
 
 % Calculates the denssity.
 bmid = (b(:,1:end-1) + b(:,2:end)) ./ 2;

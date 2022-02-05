@@ -1,5 +1,5 @@
 % Solves one step for the PDE.
-function [a2, b2] = solverStep(a1, b1, x0, dx, dt, x, xo2)
+function [a2, b2] = solveStep(a1, b1, x0, dx, dt, x, xo2)
 
     % This block can be commented out to improve efficiency if you know that the
     % arguments are correct.
