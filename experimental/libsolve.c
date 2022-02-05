@@ -1,6 +1,11 @@
-#include <stdbool.h>
-#include <stdint.h>
 #include <math.h>
+#ifdef MATLAB_MEX_FILE
+    #define malloc(n) mxMalloc(n)
+    #define free(p) mxFree(p)
+#else
+    #pragma message "Not using MATLAB's heap"
+    #include <stdlib.h>
+#endif
 
 #include "libsolve.h"
 
@@ -176,5 +181,84 @@ uintmax_t solve(uintmax_t m, uintmax_t n, const double a0[m],
     }
 
     return n;
+
+}
+
+time_result time(uintmax_t n, const double a[n], const double b[n],
+          const double x0, const double dx, const double dt) {
+
+    time_result out = {
+        .t1 = NAN,
+        .t2 = NAN,
+        .success = NOMEM,
+    };
+
+    double *a1 = malloc(n * sizeof(double));
+    double *b1 = malloc(n * sizeof(double));
+    double *a2 = malloc(n * sizeof(double));
+    double *b2 = malloc(n * sizeof(double));
+
+    if (!(a1 || b1 || a2 || b2)) {
+        free(a1);
+        free(b1);
+        free(a2);
+        free(b2);
+        return out;
+    }
+
+    for (uintmax_t i = 0; i < n; ++i) {
+        a2[i] = a[i];
+        b2[i] = b[i];
+    }
+
+    register double t = 0;
+    register double theta = 0;
+    register bool positive = false;
+    register bool negative = false;
+
+    for (;;) {
+
+        for (uintmax_t i = 0; i < n; ++i) {
+
+            a1[i] = a2[i];
+            b1[i] = b2[i];
+
+            theta = 1 - pow(x0 + (i + 0.5) * dx, 2) * (a1[i] + pow(sin(2 * b1[i]), 2) / 4);
+
+            positive |= theta >= 0;
+            negative |= theta <= 0;
+
+        }
+
+        if (isnan(out.t1)) {
+            if (positive & negative) {
+                out.t1 = t;
+            }
+        } else {
+            if (positive ^ negative) {
+                out.t2 = t;
+                out.success = SUCCESS;
+                break;
+            }
+        }
+
+        if (!solveStep(n, a1, b1, a2, b2, x0, dx, dt)) {
+            out.success = BCERROR;
+            break;
+        }
+
+        t += dt;
+
+        positive = false;
+        negative = false;
+
+    }
+
+    free(a1);
+    free(b1);
+    free(a2);
+    free(b2);
+
+    return out;
 
 }

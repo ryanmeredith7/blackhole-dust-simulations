@@ -3,6 +3,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef struct {
+    enum {SUCCESS, NOMEM, BCERROR} success;
+    double t1, t2;
+} time_result;
+
 /* This function solves a step of a solution to the PDE.
  *
  * Inputs:
@@ -73,6 +78,14 @@ uintmax_t solve(
         const double b0[m],
         double a[n][m],
         double b[n][m],
+        double x0,
+        double dx,
+        double dt);
+
+time_result time(
+        uintmax_t n,
+        const double a[n],
+        const double b[n],
         double x0,
         double dx,
         double dt);
