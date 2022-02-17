@@ -86,7 +86,7 @@ void mexFunction(int nout, mxArray *out[], int nin, const mxArray *in[]) {
         case BCERROR:
             mexErrMsgIdAndTxt("PDESolve:Time:ImaginaryNumber",
                     "Ran into the imaginary number while computing the boundary "
-                    "conditions, truncating result");
+                    "conditions");
             break;
         case SUCCESS:
             out[0] = mxCreateDoubleScalar(result.t1);
