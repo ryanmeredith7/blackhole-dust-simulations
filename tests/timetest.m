@@ -4,7 +4,6 @@ x0 = 3;
 a0 = 5;
 dx = 0.01;
 dt = 0.001;
-n = 30000;
 
 % Cell boundries
 x = (0:dx:a0).';
@@ -20,5 +19,5 @@ b = -asin(sqrt(8*pi*p0/3*x0^3 ./ xm .^ 3 - a));
 a(xm < x0) = a0 ^ -2;
 b(xm < x0) = -asin(sqrt(8*pi*p0/3 - a0 ^ -2));
 
-tic; [t1,t2] = time(a, b, 0, dx, dt); toc;
+[t1,t2] = time(a, b, 0, dx, dt);
 disp([t1,t2]);
