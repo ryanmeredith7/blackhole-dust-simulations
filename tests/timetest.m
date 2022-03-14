@@ -1,5 +1,5 @@
 % Paramaters to set up the initial conditions and solver.
-p0 = 7.4e-5;
+p0 = 1e-5;
 x0 = 40;
 a0 = 50;
 dx = 0.1;
