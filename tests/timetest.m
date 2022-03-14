@@ -1,9 +1,9 @@
 % Paramaters to set up the initial conditions and solver.
-p0 = 0.00006;
+p0 = 7.4e-5;
 x0 = 40;
-a0 = 100;
-dx = 0.2;
-dt = 0.1;
+a0 = 50;
+dx = 0.1;
+dt = 0.02;
 
 % Cell boundries
 x = (0:dx:a0).';

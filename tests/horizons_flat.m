@@ -1,9 +1,9 @@
 % Paramaters to set up the initial conditions and solver.
-x0 = 40;
 p0 = 1e-5;
+x0 = 40;
 a0 = 50;
 dx = 0.1;
-dt = 0.02
+dt = 0.02;
 
 % Cell boundries
 x = (0:dx:a0).';
@@ -15,11 +15,11 @@ xm = x(2:end) - dx/2;
 % case.
 a = zeros(size(xm));
 
-n = 100;
+n = 65;
 step = 1e-6;
 
 ps = (p0:step:p0 + step * (n - 1)).';
-ts = NaN(1, n);
+ts = NaN(n, 1);
 
 for i = 1:n
 

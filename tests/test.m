@@ -1,10 +1,10 @@
 % Paramaters to set up the initial conditions and solver.
-p0 = 0.00001;
+p0 = 1e-5;
 x0 = 40;
 a0 = 50;
-dx = 0.2;
-dt = 0.1;
-n = uint64(780/dt);
+dx = 0.1;
+dt = 0.02;
+n = uint64(130/dt);
 
 % Midpoints of the cells.
 xs = (dx/2:dx:a0).';
@@ -44,19 +44,6 @@ speed = 5;
 
 theta = 1 - xs .^ 2 .* (a + sin(2 .* b) .^ 2 ./ 4);
 
-%figure;
-%animate(xs, theta, speed);
-%uiwait(msgbox("Press OK to continue.", "Done plotting rho"));
-
 figure;
-plot(xs, theta(:,1130:1131));
-figure;
-plot(xs, theta(:,1133));
+animate(xs, theta, speed, [-1, 1]);
 uiwait(msgbox("Press OK to continue.", "Done plotting rho"));
-
-%figure;
-%animate(xs, sin(2 .* b), speed);
-%uiwait(msgbox("Press OK to continue.", "Done plotting rho"));
-%
-%figure;
-%animate(xs, sin(2 .* b) .^ 2, speed);
