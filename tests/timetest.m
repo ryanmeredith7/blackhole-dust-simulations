@@ -1,9 +1,10 @@
 % Paramaters to set up the initial conditions and solver.
-p0 = 1e-5;
-x0 = 40;
-a0 = 50;
-dx = 0.1;
-dt = 0.02;
+p0 = 0.01;
+x0 = 3;
+a0 = 5;
+dx = 0.01;
+dt = 0.001;
+n = 30000;
 
 % Cell boundries
 x = (0:dx:a0).';
@@ -11,11 +12,13 @@ xo2 = x ./ 2;
 % Cell midpoints
 xm = x(2:end) - dx/2;
 
-% Creates the initial condition vectors, first the outside case, then the inside
+% Creates the initial condition vectors, first the outside case, the the inside
 % case.
-b = -asin(sqrt(8*pi*p0/3*x0^3 ./ xm .^ 3));
-b(xm < x0) = -asin(sqrt(8*pi*p0/3));
-a = zeros(size(b));
+a = (x0 / a0 ./ xm) .^ 2;
+b = -asin(sqrt(8*pi*p0/3*x0^3 ./ xm .^ 3 - a));
 
-[t1,t2] = time(a, b, 0, dx, dt);
+a(xm < x0) = a0 ^ -2;
+b(xm < x0) = -asin(sqrt(8*pi*p0/3 - a0 ^ -2));
+
+tic; [t1,t2] = time(a, b, x0, dx, dt); toc;
 disp([t1,t2]);
