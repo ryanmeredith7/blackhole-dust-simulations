@@ -1,0 +1,138 @@
+\documentclass[12pt]{article}
+\usepackage{parskip}
+\usepackage{fontspec}
+\setmainfont{EB Garamond}
+\usepackage{hyperref}
+\frenchspacing
+
+\usepackage[intlimits]{mathtools}
+\usepackage{amssymb}
+\newcommand{\dd}{\mathop{}\!\mathrm{d}}
+
+\usepackage{biblatex}
+\addbibresource{sources.bib}
+
+\title{Simulating Black Holes as Dust Clouds with Loop Quantum Gravity Corrections}
+\author{Ryan Meredith\\3559441}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+\section{Background Material}
+
+The foundation of my project is general relativity. There are many great textbooks on
+general relativity that could be used as reference, I used Sean Carroll's
+\textit{Spacetime and Geometry: An Introduction to General Relativity} \cite{gr}.
+
+The metric used for this project is the Lema\^{i}tre-Tolman-Bondi metric. This metric is a
+spherically symmetric dust cloud solution to Einstein's field equations. The metric in
+Lema\^{i}tre coordinates is
+\[ \dd s^2 = -\dd t^2 + \frac{\dot{R}^2}{1 + 2E} \dd r^2 + R^2\dd \Omega^2 \]
+where $R$ is a function of $r$ and $t$, $E$ is a function of $r$, and
+\[ \dd \Omega^2 = \dd \theta^2 + \sin^2(\theta)\dd \phi^2. \]
+
+For this project we used Painlev\'{e}-Gullstrand coordinates instead of Lema\^{i}tre
+coordinates. The Lema\^{i}tre-Tolman-Bondi metric in Painlev\'{e}-Gullstrand coordinates
+is
+\[ \dd s^2 = \dd t^2 + \frac{(E^b)^2}{x^2} (\dd x + N^x\dd t^2)^2 + x^2 \dd \Omega^2 \]
+where
+\[ N^x = -\frac{x}{\gamma\sqrt{\Delta}} \sin\left(\frac{\sqrt{\Delta}b}{x}\right)
+\cos\left(\frac{\sqrt{\Delta}b}{x}\right). \]
+For more details on The Lema\^{i}tre-Tolman-Bondi metric in Painlev\'{e}-Gullstrand
+coordinates, see Appendix B and C of the paper ``LTB spacetimes in terms of Dirac
+observables" by K. Giesel et al. \cite{metric}.
+
+Then we apply the loop quantum gravity corrections to get the equations of motion
+\[ \dot{b} = \frac{\gamma x}{2(E^b)^2} - \frac{\gamma}{2x} - \frac{x}{\gamma\Delta}
+\sin\left( \frac{\sqrt{\Delta}}{x}b \right) \left( \frac{3}{2}\sin\left(
+\frac{\sqrt{\Delta}}{x}b \right) + \partial_x \left(
+\sin\left(\frac{\sqrt{\Delta}}{x}b\right) \right) \right) \]
+and
+\[ \dot{E^b} = -\frac{x^2}{\gamma\sqrt{\Delta}} \partial_x \left( \frac{E^b}{x} \right)
+\sin \left( \frac{\sqrt{\Delta}}{x}b \right) \cos \left( \frac{\sqrt{\Delta}}{x}b
+\right). \]
+
+\section{The Simulation Program}
+
+The simulation is a result of numerically solving the equations of motion. The methods
+used to solve these coupled partial differential equations are adopted from the book
+\textit{Finite Volume Methods for Hyperbolic Problems} by Randall J. LeVeque \cite{fvm}.
+The differential equations need to be rewritten to a form that these methods can more
+easily be applied to first though.
+
+\subsection{The PDEs}
+
+The relevant partial differential equations are
+\[ \dot{b} = \frac{\gamma x}{2(E^b)^2} - \frac{\gamma}{2x} - \frac{x}{\gamma\Delta}
+\sin\left( \frac{\sqrt{\Delta}}{x}b \right) \left( \frac{3}{2}\sin\left(
+\frac{\sqrt{\Delta}}{x}b \right) + \partial_x \left(
+\sin\left(\frac{\sqrt{\Delta}}{x}b\right) \right) \right) \]
+and
+\[ \dot{E^b} = -\frac{x^2}{\gamma\sqrt{\Delta}} \partial_x \left( \frac{E^b}{x} \right)
+\sin \left( \frac{\sqrt{\Delta}}{x}b \right) \cos \left( \frac{\sqrt{\Delta}}{x}b
+\right) \]
+where a dot is used for the derivative with respect to time. To simplify things, we can
+introduce the variables
+\[ \beta = \frac{\sqrt{\Delta}}{x}b \]
+and
+\[ \alpha = \gamma\sqrt{\Delta} \left( \frac{1}{x^2} - \frac{1}{(E^b)^2} \right). \]
+By substituting these variable in for $b$ and $E^b$, we get the equations
+\[ \dot{\alpha} = -\frac{x\sin(2\beta)}{2\gamma\sqrt{\Delta}}\alpha_x -
+\frac{\sin(2\beta)\alpha}{\gamma\sqrt{\Delta}} \]
+and
+\[ \dot{\beta} = -\frac{x\sin(2\beta)}{2\gamma\sqrt{\Delta}}\beta_x -
+\frac{3\sin^2(\beta)}{2\gamma\sqrt{\Delta}} - \frac{\alpha}{2}. \]
+Furthermore, let us set $\Delta = \gamma = 1$ to get
+\begin{equation} \label{eq:a}
+    \dot{\alpha} = -\frac{x}{2}\sin(2\beta)\alpha_x - \sin(2\beta)\alpha
+\end{equation}
+and
+\begin{equation} \label{eq:b}
+    \dot{\beta} = -\frac{x}{2}\sin(2\beta)\beta_x - \frac{3}{2}\sin^2(\beta) -
+    \frac{\alpha}{2}.
+\end{equation}
+
+\subsection{The PDE Solver}
+
+The first step towards solving the PDEs is to discretize the solution domain in to
+evenly spaced cells. To this end, let $x_0$ be the start of the domain, and let $x_n =
+x_0 + n\Delta x$ where $\Delta x$ is the spacing between cells, so we have cells $C_n =
+(x_n,x_{n+1})$. Next, we discretize $\alpha$ and $\beta$ by approximating them as
+piece-wise constant functions at the initial time $t_1$, that is $\alpha(x,t_1) =
+\alpha_n^1$ and $\beta(x,t_1) = \beta_n^1$ for all $x \in C_n$, and each
+$n\in\mathbb{N}$.
+
+Now we integrate equations \ref{eq:a} and \ref{eq:b} over the cell $C_n$.
+Equation \ref{eq:a} becomes
+\[
+    \int_{x_n}^{x_{n+1}}\! \dot{\alpha}(x, t) \dd x = - \int_{x_n}^{x_{n+1}}\!
+    \frac{x}{2} \sin(2\beta(x, t)) \alpha_x(x, t) \dd x - \int_{x_n}^{x_{n+1}}\!
+    \sin(2\beta(x, t)) \alpha(x, t) \dd x
+\]
+and equation \ref{eq:b} becomes
+\begin{multline*}
+    \int_{x_n}^{x_{n+1}}\! \dot{\beta}(x, t) \dd x = - \int_{x_n}^{x_{n+1}}\!
+    \frac{x}{2} \sin(2\beta(x, t)) \beta_x(x, t) \dd x - \int_{x_n}^{x_{n+1}}\!
+    \frac{3}{2} \sin^2(\beta(x, t)) \dd x \\ - \int_{x_n}^{x_{n+1}}\! \frac{\alpha(x,
+    t)}{2} \dd x.
+\end{multline*}
+At time $t_1$ these simplify further to
+\begin{equation} \label{eq:a2}
+    \dot{a}_n^1 \Delta x = - \int_{x_n}^{x_{n+1}}\! \frac{x}{2} \sin(2\beta(x, t))
+    \alpha_x(x, t) \dd x - \sin(2\beta_n^1) \alpha_n^1 \Delta x
+\end{equation}
+and
+\begin{equation} \label{eq:b2}
+    \dot{\beta}_n^1 \Delta x = - \int_{x_n}^{x_{n+1}}\! \frac{x}{2} \sin(2\beta(x, t))
+    \beta_x(x, t) \dd x - \frac{3}{2} \sin^2(\beta_n^1) \Delta x - \frac{\alpha_n^1}{2}
+    \Delta x.
+\end{equation}
+
+\printbibliography[heading=bibintoc]
+
+\end{document}
