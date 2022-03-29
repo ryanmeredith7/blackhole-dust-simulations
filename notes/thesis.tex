@@ -23,6 +23,38 @@
 
 \section{Introduction}
 
+In this project, a solver for the equations of motion of a spherically symmetric dust
+cloud, with loop quantum gravity corrections applied, was created to simulate black
+holes. Then, that solver was applied to a variety of initial conditions to examine the
+dynamics they resulted in. Finally, the solver was used to time the lifetimes of event
+horizons and examine them as a function of mass. The source code of this project is
+available at \url{https://github.com/ryanmeredith7/blackhole-dust-simulations}.
+
+The foundations of this project are in general relativity. The metric of interest is the
+Lema\^{i}tre-Tolman-Bondi metric in Painlev\'{e}-Gullstrand coordinates. The equations of
+motion are extracted from this setting, but loop quantum gravity corrections are added
+to the equations. Unfortunately, the details of loop quantum gravity are beyond the
+scope of this project.
+
+The solver is necessarily complicated since the equation of motions are a non-linear set
+of coupled partial differential equations. The solver uses a modified version of
+Godunov's method for conservation laws. It also uses the viewpoint of wave speeds and
+fluctuations so that the wave speeds can be calculated once and then applied to both
+equations, which simplifies the calculations a lot since the wave speeds only depend on
+one of the variables.
+
+Once the solver is working, we can apply a variety of initial conditions to test various
+interesting cases. Using MATLAB's visualization tools, we can create animations of the
+solutions to examine the dynamics of the solution qualitatively. We can also compare the
+behavior of the solutions to what we expect based on the differential equations
+themselves.
+
+Finally, we can also examine the solutions quantitatively by using the solver to time
+the lifetimes of the event horizons of the black holes. Previous work has been done on a
+special case of these equations of motion, so we can compare to that to validate the
+solver. The idea would be to then extend the model from the special case to the general
+case, but there was unfortunately not enough time to do that.
+
 \section{Background Material}
 
 The foundation of my project is general relativity. There are many great textbooks on
@@ -43,9 +75,11 @@ is
 where
 \[ N^x = -\frac{x}{\gamma\sqrt{\Delta}} \sin\left(\frac{\sqrt{\Delta}b}{x}\right)
 \cos\left(\frac{\sqrt{\Delta}b}{x}\right). \]
+Note that here $x$ is the radial coordinate, so $x \ge 0$.
+
 For more details on The Lema\^{i}tre-Tolman-Bondi metric in Painlev\'{e}-Gullstrand
 coordinates, see Appendix B and C of the paper ``LTB spacetimes in terms of Dirac
-observables" by K. Giesel et al. \cite{metric}.
+observables'' by K. Giesel et al.\ \cite{metric}.
 
 Then we apply the loop quantum gravity corrections to get the equations of motion
 \[ \dot{b} = \frac{\gamma x}{2(E^b)^2} - \frac{\gamma}{2x} - \frac{x}{\gamma\Delta}
@@ -56,8 +90,13 @@ and
 \[ \dot{E^b} = -\frac{x^2}{\gamma\sqrt{\Delta}} \partial_x \left( \frac{E^b}{x} \right)
 \sin \left( \frac{\sqrt{\Delta}}{x}b \right) \cos \left( \frac{\sqrt{\Delta}}{x}b
 \right). \]
+More information about the loop quantum gravity corrections and these equations of
+motion can be found in these papers \cite{lqg2, lqg1}.
 
 \section{The Simulation Program}
+
+Everything in section was done during the summer before the start of the school year
+while working, but it is central to my project, so I will describe it here in detail.
 
 The simulation is a result of numerically solving the equations of motion. The methods
 used to solve these coupled partial differential equations are adopted from the book
@@ -88,50 +127,459 @@ and
 \[ \dot{\beta} = -\frac{x\sin(2\beta)}{2\gamma\sqrt{\Delta}}\beta_x -
 \frac{3\sin^2(\beta)}{2\gamma\sqrt{\Delta}} - \frac{\alpha}{2}. \]
 Furthermore, let us set $\Delta = \gamma = 1$ to get
-\begin{equation} \label{eq:a}
+\begin{equation*}
     \dot{\alpha} = -\frac{x}{2}\sin(2\beta)\alpha_x - \sin(2\beta)\alpha
-\end{equation}
+\end{equation*}
 and
-\begin{equation} \label{eq:b}
+\begin{equation*}
     \dot{\beta} = -\frac{x}{2}\sin(2\beta)\beta_x - \frac{3}{2}\sin^2(\beta) -
     \frac{\alpha}{2}.
-\end{equation}
+\end{equation*}
 
 \subsection{The PDE Solver}
 
-The first step towards solving the PDEs is to discretize the solution domain in to
-evenly spaced cells. To this end, let $x_0$ be the start of the domain, and let $x_n =
-x_0 + n\Delta x$ where $\Delta x$ is the spacing between cells, so we have cells $C_n =
-(x_n,x_{n+1})$. Next, we discretize $\alpha$ and $\beta$ by approximating them as
-piece-wise constant functions at the initial time $t_1$, that is $\alpha(x,t_1) =
-\alpha_n^1$ and $\beta(x,t_1) = \beta_n^1$ for all $x \in C_n$, and each
-$n\in\mathbb{N}$.
+The basic method used here is Godunov's method, described in section 12.1 of LeVeque's
+book, but implemented in terms of fluctuations and wave speeds as in section 12.2 of
+LeVeque's book. However, the material in sections 16.1, 16.4, 16.5, 16.6, and 9.4 are
+also necessary, along with any background needed for these sections from the book.
 
-Now we integrate equations \ref{eq:a} and \ref{eq:b} over the cell $C_n$.
-Equation \ref{eq:a} becomes
-\[
-    \int_{x_n}^{x_{n+1}}\! \dot{\alpha}(x, t) \dd x = - \int_{x_n}^{x_{n+1}}\!
-    \frac{x}{2} \sin(2\beta(x, t)) \alpha_x(x, t) \dd x - \int_{x_n}^{x_{n+1}}\!
-    \sin(2\beta(x, t)) \alpha(x, t) \dd x
+The basic idea of this method is that you break your domain up into cells and
+approximate the functions as piecewise constant functions. At each time step, you
+calculate the fluctuations at each cell interface to see how each cell effects its
+neighbor.
+
+Since these methods were developed with fluid dynamics in mind, the cells are often
+thought of as having a ``fluid'' with the discontinuities between cells causing waves in
+the fluid which leads to the fluctuations. I will adopt these ideas for the explanation
+since it makes things easier to grasps and is also what is done in LeVeque's book.
+
+For these equations, the wave speeds are given by the expression
+\[ \frac{x}{2}\sin(2\beta) \]
+which does not depend on $\alpha$, so that variable can be ignored for the moment.
+Unfortunately, this expression is nonlinear and not monotonic, so it leads to
+complicated wave structures involving combinations of shock waves and rarefaction waves,
+called compound waves. More details about this is found in section 16.1 of LeVeque's
+book.
+
+Luckily, we only need to calculate fluctuations for this method, so we do not need to
+calculate the exact wave structure. Instead, we can just find the average wave speed to
+the right and the average wave speed to the left. If the wave moves in only one
+direction, then this is easy, the average wave speed of the $n$\textsuperscript{th} cell
+interface is given by
+\begin{equation} \label{eq:sn}
+    s_n = \begin{dcases}
+        \frac{x_n}{2}\frac{\sin^2(\beta_r) - \sin^2(\beta_l)}{\beta_r - \beta_l}, &
+        \beta_l \ne \beta_r \\
+        \frac{x_n}{2} \sin(2\beta_l), & \beta_l = \beta_r
+    \end{dcases}
+\end{equation}
+where $\beta_l$ and $\beta_r$ are the values of $\beta$ in the cells to the left and
+right of the cell interface respectively, and $x_n$ is the location of the
+$n$\textsuperscript{th} cell interface. In this case, a positive value is a wave moving
+to the left and a negative value is a wave moving to the right. Since everything is
+moving in one direction, the wave size is given by $\beta_r - \beta_l$, and the wave
+speed times the wave size gives the fluctuations.
+
+Now for waves that have components moving in both directions, things become more
+complicated. First, this case happens if and only if the wave speed at $\beta_l$ is
+negative, and the wave speed at $\beta_r$ is positive. Since $x$ is positive, the sign
+of the wave speed depends only on $\sin(2\beta)$. Now, let us split this case into two
+cases. Also, for the following discussion, let an increasing zero be a zero of
+$\sin(2\beta)$ where it is increasing, and let a decreasing zero be a zero where it is
+decreasing.
+
+In the case where $\beta_l < \beta_r$, the condition is equivalent to there being an
+increasing zero in $(\beta_l,\beta_r)$. We also know that for $\sin(2\beta)$ the
+increasing zeros are at $k\pi$ for some $k\in\mathbb{Z}$. Thus, a necessary and
+sufficient condition for this case is
+\[ \left\lfloor \frac{\beta_l}{\pi} \right\rfloor < \left\lfloor \frac{\beta_r}{\pi}
+\right\rfloor \]
+and the average wave speeds to the left and right are given by
+\[ s_n^l = \frac{x_n}{2} \frac{\sin^2(\beta_l^*) - \sin^2(\beta_l)}{\beta_l^* - \beta_l}
 \]
-and equation \ref{eq:b} becomes
-\begin{multline*}
-    \int_{x_n}^{x_{n+1}}\! \dot{\beta}(x, t) \dd x = - \int_{x_n}^{x_{n+1}}\!
-    \frac{x}{2} \sin(2\beta(x, t)) \beta_x(x, t) \dd x - \int_{x_n}^{x_{n+1}}\!
-    \frac{3}{2} \sin^2(\beta(x, t)) \dd x \\ - \int_{x_n}^{x_{n+1}}\! \frac{\alpha(x,
-    t)}{2} \dd x.
-\end{multline*}
-At time $t_1$ these simplify further to
-\begin{equation} \label{eq:a2}
-    \dot{a}_n^1 \Delta x = - \int_{x_n}^{x_{n+1}}\! \frac{x}{2} \sin(2\beta(x, t))
-    \alpha_x(x, t) \dd x - \sin(2\beta_n^1) \alpha_n^1 \Delta x
-\end{equation}
 and
-\begin{equation} \label{eq:b2}
-    \dot{\beta}_n^1 \Delta x = - \int_{x_n}^{x_{n+1}}\! \frac{x}{2} \sin(2\beta(x, t))
-    \beta_x(x, t) \dd x - \frac{3}{2} \sin^2(\beta_n^1) \Delta x - \frac{\alpha_n^1}{2}
-    \Delta x.
-\end{equation}
+\[ s_n^r = \frac{x_n}{2} \frac{\sin^2(\beta_r) - \sin^2(\beta_r^*)}{\beta_r - \beta_r^*}
+\]
+respectively, where $\beta_l^*$ and $\beta_r^*$ are the nearest increasing zeros to
+$\beta_l$ and $\beta_r$ respectively. While $\beta_l^*$ and $\beta_r^*$ are not
+necessarily equal, if they are not then they are connected by a stationary shock wave
+which does not affect the fluctuations.
+
+From the locations of the increasing zeros, we know that $\sin^2(\beta_l^*) =
+\sin^2(\beta_r^*) = 0$. The wave size for these waves are $\beta_l^* - \beta_l$ for the
+left moving wave and $\beta_r - \beta_r^*$ for the right moving wave. However, since we
+only care the fluctuations, we can scale the wave speeds and sizes so that we no longer
+need to calculate $\beta_l^*$ or $\beta_r^*$, as long as it leads to the same
+fluctuations. Let us use the effective speeds
+\[ s_n^l = \frac{x_n}{2} \frac{\sin^2(\beta_l)}{\beta_l - \beta_r} \]
+and
+\[ s_n^r = \frac{x_n}{2} \frac{\sin^2(\beta_r)}{\beta_r - \beta_l} \]
+with effective wave size of $\beta_r - \beta_l$ for both. This has the benefit of being
+the same wave size as the case where the wave is moving in only one direction. Note that
+this scaling of the wave speeds may not work if higher order corrections are added to
+this method.
+
+Now, for the case where $\beta_l > \beta_r$ there needs to be a decreasing zero in
+$(\beta_r,\beta_l)$. The decreasing zeros are at $(k + 1/2)\pi$ for some
+$k\in\mathbb{Z}$, so the necessary and sufficient condition for this case is
+\[ \left\lfloor \frac{\beta_l}{\pi} - \frac{1}{2} \right\rfloor  > \left\lfloor
+\frac{\beta_r}{\pi} - \frac{1}{2} \right\rfloor \]
+with the average wave speeds given by the same formulas as the previous case, except
+here $\beta_l^*$ and $\beta_r^*$ are decreasing zeros and so $\sin^2(\beta_l^*) =
+\sin(\beta_r^*) = 1$. After scaling the speeds in the same way as the last case, the
+effective wave speeds are
+\[ s_n^l = \frac{x_n}{2} \frac{\cos^2(\beta_l)}{\beta_r - \beta_l} \]
+and
+\[ s_n^r = \frac{x_n}{2} \frac{\cos^2(\beta_r)}{\beta_l - \beta_r} \]
+with effective wave size of $\beta_r - \beta_l$ for both again.
+
+Combining all of this together, the simplest way to model this is: at each cell
+interface we have a wave of size $\beta_r - \beta_l$ moving to both the left and right.
+The speed of the waves at the $n$\textsuperscript{th} cell interface are given by
+\[ s_n^l = \begin{dcases}
+    \frac{x_n}{2} \frac{\sin^2(\beta_l)}{\beta_l - \beta_r}, & \left\lfloor
+    \frac{\beta_l}{\pi} \right\rfloor < \left\lfloor \frac{\beta_r}{\pi} \right\rfloor
+    \\
+    \frac{x_n}{2} \frac{\cos^2(\beta_l)}{\beta_r - \beta_l}, & \left\lfloor
+    \frac{\beta_l}{\pi} - \frac{1}{2} \right\rfloor  > \left\lfloor
+    \frac{\beta_r}{\pi} - \frac{1}{2} \right\rfloor \\
+    \min(s_n, 0), & \textrm{otherwise}
+\end{dcases} \]
+and
+\[ s_n^r = \begin{dcases}
+    \frac{x_n}{2} \frac{\sin^2(\beta_r)}{\beta_r - \beta_l}, & \left\lfloor
+    \frac{\beta_l}{\pi} \right\rfloor < \left\lfloor \frac{\beta_r}{\pi} \right\rfloor
+    \\
+    \frac{x_n}{2} \frac{\cos^2(\beta_r)}{\beta_l - \beta_r}, & \left\lfloor
+    \frac{\beta_l}{\pi} - \frac{1}{2} \right\rfloor  > \left\lfloor
+    \frac{\beta_r}{\pi} - \frac{1}{2} \right\rfloor \\
+    \max(s_n, 0), & \textrm{otherwise}
+\end{dcases} \]
+where $s_n$ is given by equation \ref{eq:sn}. The wave speeds may be zero which is
+equivalent to having no wave in that direction. The fluctuations to the left and right
+are given by multiplying these wave speeds by $\beta_r - \beta_l$.
+
+Now we turn to the $\alpha$ variable. It has the same wave speeds as $\beta$, so we can
+use the same wave speeds $s_n^l$ and $s_n^r$ that we calculated with $\beta$, but with
+wave size of $\alpha_r - \alpha_l$, that is we multiply the wave speeds by that to get
+the fluctuations in $\alpha$.
+
+Now that we can calculate fluctuations, we need a formula for updating $\alpha$ and
+$\beta$ over a time step $\Delta t$. To distinguish between indices for quantities
+related to cells and quantities related to cell interfaces, let cell quantities be
+indexed by $n$ and cell interface quantities be indexed $n-1/2$. For example, the value
+of $\beta$ in the $n$\textsuperscript{th} cell will be $\beta_n$ while the wave speed to
+the right at the cell interface of the $n-1$ and $n$ cells will be $s_{n-1/2}^r$.
+Especially important is that the midpoints of each cell will now be labeled $x_n$ while
+the locations of the cell interfaces will be labeled $x_{n-1/2}$. So now we have
+\[ s_{n-1/2}^l = \begin{dcases}
+    \frac{x_{n-1/2}}{2} \frac{\sin^2(\beta_{n-1})}{\beta_{n-1} - \beta_n}, &
+    \left\lfloor \frac{\beta_{n-1}}{\pi} \right\rfloor < \left\lfloor
+    \frac{\beta_n}{\pi} \right\rfloor \\
+    \frac{x_{n-1/2}}{2} \frac{\cos^2(\beta_{n-1})}{\beta_n - \beta_{n-1}}, &
+    \left\lfloor \frac{\beta_{n-1}}{\pi} - \frac{1}{2} \right\rfloor  > \left\lfloor
+    \frac{\beta_n}{\pi} - \frac{1}{2} \right\rfloor \\
+    \min(s_{n-1/2}, 0), & \textrm{otherwise}
+\end{dcases} \]
+and
+\[ s_{n-1/2}^r = \begin{dcases}
+    \frac{x_{n-1/2}}{2} \frac{\sin^2(\beta_n)}{\beta_n - \beta_{n-1}}, & \left\lfloor
+    \frac{\beta_{n-1}}{\pi} \right\rfloor < \left\lfloor \frac{\beta_n}{\pi}
+    \right\rfloor \\
+    \frac{x_{n-1/2}}{2} \frac{\cos^2(\beta_n)}{\beta_{n-1} - \beta_n}, & \left\lfloor
+    \frac{\beta_{n-1}}{\pi} - \frac{1}{2} \right\rfloor  > \left\lfloor
+    \frac{\beta_n}{\pi} - \frac{1}{2} \right\rfloor \\
+    \max(s_{n-1/2}, 0), & \textrm{otherwise}
+\end{dcases} \]
+where
+\[ s_{n-1/2} = \begin{dcases}
+    \frac{x_{n-1/2}}{2} \frac{\sin^2(\beta_n) - \sin^2(\beta_{n-1})}{\beta_n -
+    \beta_{n-1}}, & \beta_{n-1} \ne \beta_n \\
+    \frac{x_{n-1/2}}{2} \sin(2\beta_n), & \beta_{n-1} = \beta_n
+\end{dcases}. \]
+
+Now the regular update formula for Godunov's method in terms of fluctuations is
+\[ \beta_n^{new} = \beta_n - \frac{\Delta t}{\Delta x} (s_{n-1/2}^r (\beta_n -
+\beta_{n-1}) + s_{n+1/2} (\beta_{n+1} - \beta_n) ) \]
+but we have other terms, known as source terms that need to be accounted for as well. I
+used the simplest possible way to account for them, which is to just use the values
+$\beta_n$ and $\alpha_n$ in them, but other more sophisticated methods are discussed
+in chapter 17 of LeVeque's book. This gives the update formulas
+\[ \alpha_n^{new} = \alpha_n - \Delta t \left( \frac{s_{n-1/2}^r (\alpha_n -
+\alpha_{n-1}) + s_{n+1/2}^l (\alpha_{n+1} - \alpha_n)}{\Delta x} +
+\sin(2\beta_n)\alpha_n \right) \]
+and
+\[ \beta_n^{new} = \beta_n - \Delta t \left( \frac{s_{n-1/2}^r (\beta_n - \beta_{n-1}) +
+s_{n+1/2}^l (\beta_{n+1} - \beta_n)}{\Delta x} + \frac{3}{2}\sin^2(\beta_n) +
+\frac{\alpha_n}{2} \right) \]
+
+\subsection{Boundary Conditions}
+
+This is almost a complete description of the solver, the only part left is how to deal
+with the boundaries. The best way to apply boundary conditions is to specify how to
+calculate $\alpha_0$, $\beta_0$, $\alpha_{N+1}$, and $\beta_{N+1}$ assuming you are
+given a collection of $N$ samples of $\beta$ and $\alpha$, that is you know $\alpha_1$
+to $\alpha_N$ and $\beta_1$ to $\beta_N$. Then you can just use these values in the same
+update formula as all the rest of the cells.
+
+The boundary condition at the origin turns out to not affect the numerics at all for
+this method. This is because the wave speeds depend linearly on $x$, so when $x=0$ the
+wave speeds are also zero. Thus, no matter the choice of $\alpha_0$ and $\beta_0$ you
+will get the same solution since these numbers will be multiplied by zero. However, it
+is easier to implement with a boundary condition at the origin anyway, so
+$\alpha_0=\alpha_1$ and $\beta_0=\beta_1$ was used.
+
+The outer boundary is much more complicated however, and can effect the numerics. Since
+the solution technically could extend to infinity, there is no true boundary condition
+to use, we just need to pick a boundary condition that approximates the behavior we
+would get if we extended the solution range. We decided to use the conditions that
+$\dot{\alpha} = \dot{\beta} = 0$. This would cause the density to be zero at the
+boundary as well. This is equivalent to the condition that $\alpha_N^{new} = \alpha_N$
+and $\beta_N^{new} = \beta_N$, which turns out to be satisfied by
+\[ \beta_{N+1} = -\sin^{-1}\left( \sqrt{\sin^2(\beta_N) - \frac{1}{N}
+(3\sin^2(\beta_N) + \alpha_N)} \right) \]
+and
+\[ \alpha_{N+1} = \frac{1 + 2 (\beta_{N+1} - \beta_N) \sin(2\beta_N)}{3\sin^2(\beta_N) +
+\alpha_N} \alpha_N \]
+but a check must be included to make sure we do not take the square root of a negative
+number as we are looking for a real solution.
+
+\section{Examining the Dynamics}
+
+Now that we have a simulation program we need to test it and see if there is anything
+interesting we can learn from it. While there is no analytic solution to these equations
+to compare against to test the program, previous work has been done on a special case of
+these equations \cite{lqg2, lqg1}. This special case is the case of a flat space-time,
+which in these equations corresponds to $\alpha = 0$.
+
+Beyond that, we can also make hypotheses of how the simulation should go based on their
+underlying differential equations and test them using the program. If the program agrees
+with our hypothesis, that would suggest the program is likely correct, but if they do
+not agree, then we are still left wondering if our hypothesis is wrong or if the program
+is wrong.
+
+\subsection{Special Case}
+
+There were two main things we were looking for in the dynamics of the simulation in the
+special case: the solution stays flat, and the solution start with a phase where the
+matter collapses inwards, followed by a phase where the matter expands outwards lead by
+a shock wave.
+
+To test we used initial conditions that $\alpha = 0$ and the initial density is given by
+\[ \rho(x) = \begin{dcases}
+    \rho_0, & x < x_0 \\
+    0, & x > x_0
+\end{dcases} \]
+for some $x_0$. In general, the density is related to $\alpha$ and $\beta$ by
+\[ \rho = \frac{1}{8\pi x^2} \frac{\partial}{\partial x} (x^3 (\sin^2(\beta) + \alpha))
+\]
+so
+\[ x^3(\sin^2(\beta) + \alpha) = 8\pi \int_0^x\! s^2 \rho(s) \dd s. \]
+In this case,
+\[ x^3\sin^2(\beta) = \begin{dcases}
+    \frac{8}{3}\pi\rho_0 x^3, & x < x_0 \\
+    \frac{8}{3}\pi\rho_0 x_0^3, & x > x_0
+\end{dcases} \]
+thus
+\[ \beta = \begin{dcases}
+    -\sin^{-1}\left(\sqrt{\frac{8}{3}\pi\rho_0}\right), & x < x_0 \\
+    -\sin^{-1}\left(\sqrt{\frac{8}{3}\pi\rho_0 \left(\frac{x_0}{x}\right)^3}\right), & x
+    > x_0
+\end{dcases} \]
+for the initial condition of $\beta$.
+
+After writing a script that applied the solver to these initial conditions and played an
+animation of the results, we found that the solver did behave according to our
+expectations in this case. We also tried different distributions of $\rho$, such as a
+Gaussian, and they all behaved in this manner.
+
+\subsection{Simple Curvature}
+
+The simple curvature case we decided to test used the same initial density as the
+special case, but with the condition that
+\[ E^b = \begin{dcases}
+    \frac{xa_0}{\sqrt{a_0^2 - x^2}}, & x < x_0 \\
+    \frac{xa_0}{\sqrt{a_0^2 - x_0^2}}, & x > x_0
+\end{dcases} \]
+for some parameter $a>x_0$. This initial condition is curved inside $x_0$ and flat
+outside it. In terms of $\alpha$ this corresponds to
+\[ \alpha = \begin{dcases}
+    \frac{1}{a_0^2}, & x < x_0 \\
+    \left( \frac{x_0}{a_0x} \right)^2, & x > x_0
+\end{dcases} \]
+
+Our expectations for this case involved the same collapse and expansion phases from the
+special case, but with a re-collapse at some point. We also expected the solution to
+stay curved where the was matter and remain flat where there is no matter.
+
+After writing another script to run the solver on these initial conditions and animate
+the results, we found that there was the same collapse and expansion as we expected, but
+no re-collapse could be found no matter how long we ran the solver for. On the other
+hand, the solution did indeed stay curved and flat where it was supposed to.
+
+This was the first case where we had to figure out if it was our expectations that were
+incorrect, or if there was an error in the program. After reexamining the differential
+equations, we decided that in this case it was likely our expectations that were wrong.
+
+We also tried the same case except with the sign of $\alpha$ flipped and found that it
+acted essentially the same as the other sign, which is what we expected.
+
+\subsection{More Complicated Curved Cases}
+
+Having tried curved cases with $\alpha$ either all positive or all negative, we wanted
+to test more complicated curved cases with $\alpha$ both positive and negative. The
+first test we did was $\alpha$ as a sinusoidal. Specifically, we used
+\[ \alpha = \begin{dcases}
+    \frac{2\rho_0x_0}{3x} \sin\left(\frac{4\pi x_0}{x}\right), & x < x_0 \\
+    0, & x > x_0
+\end{dcases} \]
+and the same initial $\rho$. We did not have many expectations for this case, but note
+that in all the previous cases we tested $\beta > -\pi$ had always remained true, and we
+expected this to be the case here as well.
+
+After writing the test script, the solution acted mostly how we thought it might, but
+with the notable exception that $\beta$ dropped below $-\pi$ near the origin. To test if
+this was just an issue with the program, we ran the same test with several grid sizes
+and counted the number of data points that dropped below $-\pi$. If the number of data
+points below $-\pi$ was constant while varying the grid size, then this would indicate
+it is just a flaw in the program, but unfortunately this was not the case and number of
+points below $-\pi$ scaled with grid size.
+
+While this did not prove that the program worked and that this phenomenon as actually
+part of the dynamics, it certainly made us question it. Upon further inspection of the
+differential equations, if $\beta\to-\pi$ and $\alpha\to0$ then $\beta$ should not drop
+below $-\pi$, and this is the situation in the previous simpler case, but if $\alpha$
+does not approach $0$, then it is much more complicated as in the limit $\dot{\beta} =
+\frac{\alpha}{2}$.
+
+To get a better understanding of the phenomenon, and to hopefully find out if it is an
+error or not, we decided to test more cases and see if it occurs again. The next case we
+tested was $\alpha$ in the form of a sawtooth curve, specifically
+\[ \alpha = \begin{dcases}
+    \frac{x}{4}, & x < \frac{x_0}{4} \\
+    \frac{x_0}{8} - \frac{x}{4}, & \frac{x_0}{4} < x < \frac{3x_0}{4} \\
+    \frac{x}{4} - \frac{x_0}{4}, & \frac{3x_0}{4} < x < x_0 \\
+    0, & x_0 < x
+\end{dcases} \]
+and again $\beta$ dropped below $-\pi$. Although, this time it was not near the origin
+where it dropped below, and there was a shock wave travelling towards the origin from
+where it dropped below.
+
+Wanting further initial conditions to examine, we decided to create a script that
+generates a random initial $\alpha$, uses it in the solver, and plays an animation of
+the result. It created the random $\alpha$ by generating uniformly distributed random
+data across the valid interval for $\alpha$ and then apply a Gaussian smoothing filter
+to smooth out the data.
+
+It was at this point we ran into a problem, since the boundary condition used has a
+square root in it, it is possible to have complex numbers in our solution while we want
+a real solution. In practice, we simply stop the solver whenever the square root would
+give an imaginary number, and this was happening nearly every time with the random
+initial conditions. This meant that we could not get to the part of the dynamics we were
+interested in.
+
+We tried a few easy fixes to see if we could just work around this, but nothing we tried
+really helped. We would have needed to completely change and reimplement the boundary
+condition, but instead we shifted our focus to other things, and this is where the
+program still stands. That said, we believe that this boundary condition issue did not
+have a significant effect on the dynamics, it just got in the way of solving further
+times occasionally.
+
+\section{Event Horizons Lifetimes}
+
+Our next goal was to examine the lifetimes of the event horizons of the black holes and
+how they related to the mass of the black hole. To this end, I created a function that
+when given initial conditions will time the lifetime of the event horizon. We used this
+function and the initial conditions from the special case to collect data of event
+horizon lifetime and mass by varying the $\rho_0$ parameter in the initial conditions to
+vary the mass.
+
+This case has already been studied, so it is known that the lifetime depends
+quadratically on the mass, and the leading coefficient is $\frac{8}{3}\pi = 8.37758$
+\cite{lqg2}. This provides a good first test to make sure everything is working.
+Unfortunately, when this test is run using this method, a leading coefficient of
+$2.3703$ is obtained.
+
+We believe we know the reason for the discrepancy though. Since the solutions to these
+differential equations involve shock waves, they have discontinuities, so the equations
+need to be converted to integral equations to cope with that. In LeVeque's book this is
+facilitated by treating the equations as conservation laws, and using that to calculate
+the shock speed.
+
+This means that the methods can give different results depending on the form of the
+equations you apply them to, even if those forms are mathematically equivalent, this
+picking the correct variables to use in thee solve is crucial. The variables I used were
+chosen because they are constant in the simple curved case, and these methods are
+designed to keep constant section of the solution constant. I also treated the equation
+as non-conservative, since that was easier to implement.
+
+This decision had its merits, but it also caused the speed of shock waves to be faster
+than they should have been, which is what we believe caused the event horizon lifetimes
+to differ. We believe that most of what we observed qualitatively in the dynamics is
+still correct, it is just that everything is sped up somewhat.
+
+\section{Next Steps}
+
+The first step that would need to be done next is to rewrite the differential equations
+and program to fix the shock wave speed issue. We think it can be fixed by defining the
+variable
+\[ B = xb \]
+and using the equations
+\[ \dot{\alpha} = -\frac{x}{2}\sin\left(\frac{2B}{x^2}\right)\alpha_x -
+\sin\left(\frac{2B}{x^2}\right)\alpha \]
+and
+\[ \dot{B} = -\frac{\partial}{\partial x} \left( \frac{x^3}{2}
+\sin\left(\frac{B}{x^2}\right) \right) + \frac{\alpha}{2} \]
+This is a proper conservation law in $B$, albeit with a source term, and $\alpha$ can
+once again be treated using the material from section 16.6 of LeVeque's book, similar to
+how it is treated in the previous method. It may also be beneficial to change from
+$\alpha$ to a different variable as well, but this one seems good. The variable used
+should be one that is constant when some desired property is held since using this
+method will cause constant sections to remain constant. See section 16.6 of LeVeque's
+book for an example of choosing a desirable variable.
+
+The next thing to do would be to find a better boundary condition that does not break
+down like the current one does. My idea for how to do this was to calculate the solution
+to a very large radius so that the boundary condition does not have to propagate into
+the desired solution domain. Then you could truncate the solution down to the desired
+domain and calculate the solution with a variety of boundary conditions to find one that
+acts similar to the solution where effects from the boundary condition are removed.
+
+From there it should be confirmed that the new method gives the correct event horizon
+lifetimes. After that, you could look at event horizon lifetimes as function of mass for
+the simple curved case. You could also look into the $\beta$ variable dropping below
+$-\pi$ more, assuming that still happens after the change of variables.
+
+Another avenue that could be pursued is to try to improve the accuracy of the method by
+using improved methods. Specifically, it might be a good idea to try a more
+sophisticated method to deal with the source terms like a fractional step method, and to
+see if that changes the dynamics any. Similarly, you could add higher order correction
+terms to the methods and see if that changes anything significantly.
+
+\section{Conclusion}
+
+By using the Lema\^{i}tre-Tolman-Bondi metric in Painlev\'{e}-Gullstrand coordinates and
+some loop quantum gravity corrections, we got a set of coupled partial differential
+equations that describe a black hole as a dust cloud. By creating a solver for these
+equations, we effectively created a program that simulated black holes as dust clouds.
+
+The solver builds off ideas from Godunov's method, but uses wave speeds and fluctuations
+to make coupling the equations together easier. The methods used are very dependent on
+the equations used, and especially the variables used. Unfortunately, it turns out the
+choice of variables made early on was not the best choice of variables, but they still
+revealed some interesting dynamics.
+
+The simulation that were run on certain cases revealed that after the initial collapse
+and expansion, there may not be a re-collapse afterwords, as was once thought. It also
+revealed that the $\beta$ variable used may drop below $-\pi$ which was surprising.
+However, this is even less conclusive than the first observation as it was not fully
+investigated due to time constraints.
+
+With a few fixes that would not be too difficult to implement, the solver could be
+improved quite a bit. This would allow a much better picture of the dynamics, both
+qualitatively and quantitatively, to be realized. There are many interesting paths this
+project could be taken with some more time, and hopefully some very interesting
+conclusions just waiting to be found.
 
 \printbibliography[heading=bibintoc]
 
