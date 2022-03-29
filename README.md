@@ -1,4 +1,4 @@
-# Black Hole Dust Simulations
+# Simulating Black Holes as Dust Clouds with Loop Quantum Gravity Corrections
 
 ## Installation
 
