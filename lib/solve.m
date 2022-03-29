@@ -56,18 +56,6 @@ function [a,b] = solve(ai, bi, x0, dx, dt, n)
         aend = (1 + 2 * (bend - b(m,i)) * sin(2 * b(m,i)) ...
             / (3 * sb2(m) + a(m,i))) * a(m,i);
 
-        % Checks to see if the boundary conditions is real, if not gives the
-        % user a warning and ends the computation early, truncating the results.
-        % Different boundary conditions could be used if this becomes an issue.
-        if ~isreal(bend)
-            a = a(:,1:i);
-            b = b(:,1:i);
-            warning("PDESolve:ImaginaryNumber", ...
-                "Ran into the imaginary number when computing the boundary " ...
-                + "conditions, truncating solutions");
-            break
-        end
-
         % Boundary conditions on the left, set so that a and b are constant in
         % space.
         a0 = a(1,i);
@@ -127,6 +115,23 @@ function [a,b] = solve(ai, bi, x0, dx, dt, n)
         % Next we remove waves moving off the end of the domain.
         sr(m+1) = [];
         sl(1) = [];
+
+        if sr(m) > 0
+            keyboard;
+            sl(m) = 0;
+        end
+
+        % Checks to see if the boundary conditions is real, if not gives the
+        % user a warning and ends the computation early, truncating the results.
+        % Different boundary conditions could be used if this becomes an issue.
+        if sl(m) ~= 0 && ~isreal(bend)
+            a = a(:,1:i);
+            b = b(:,1:i);
+            warning("PDESolve:ImaginaryNumber", ...
+                "Ran into the imaginary number when computing the boundary " ...
+                + "conditions, truncating solutions");
+            break
+        end
 
         % Finally, we simply use these speeds in our update formula.
         a(:,i+1) = a(:,i) - dt .* ((sr .* diff([a0; a(:,i)]) ...
