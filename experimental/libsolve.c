@@ -143,7 +143,7 @@ bool solveStep(uintmax_t n, const double a1[n], const double b1[n],
     // that this value makes sense before continuing.
     register double sb2 = pow(sin(bl), 2)
                           - dx / (x0 + n*dx) * (3*pow(sin(bl), 2) + al);
-    if (-1 <= sb2 && sb2 <= 1) {
+    if (0 <= sb2 && sb2 <= 1) {
         br = -asin(sqrt(sb2));
     } else {
         return false;
