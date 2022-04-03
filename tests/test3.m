@@ -28,21 +28,21 @@ bi = -asin(sqrt(mi - ai));
 bmid = (b(:,1:end-1) + b(:,2:end)) ./ 2;
 p = (diff(b, 1, 2) + diff(a, 1, 2) ./ sin(2 .* bmid)) ./ (-4*pi*dt);
 
-speed = 50;
+speed = 20;
 
 % Plays a short movie of the solution values.
-%figure(Name="Animation of a");
-animate(xs, a, speed, file="plots/test3A");
-%uiwait(msgbox("Press OK to continue.", "Done plotting a"));
+figure(Name="Animation of a");
+animate(xs, a, speed);
+uiwait(msgbox("Press OK to continue.", "Done plotting a"));
 
-%figure(Name="Animation of alpha");
-%animate(xs, 1 - xs .^ 2 .* a, speed);
-%uiwait(msgbox("Press OK to continue.", "Done plotting alpha"));
+figure(Name="Animation of alpha");
+animate(xs, 1 - xs .^ 2 .* a, speed);
+uiwait(msgbox("Press OK to continue.", "Done plotting alpha"));
 
-%figure(Name="Animation of beta");
-animate(xs, b, speed, file="plots/test3B");
-%uiwait(msgbox("Press OK to continue.", "Done plotting beta"));
+figure(Name="Animation of beta");
+animate(xs, b, speed);
+uiwait(msgbox("Press OK to continue.", "Done plotting beta"));
 
-%figure(Name="Animation of rho");
-animate(xs(2:end) - dx/2, diff(xs .^ 3 .* (sin(b) .^ 2 + a)) ./ (8*pi*dx .* (xs(2:end) - dx/2) .^ 2), speed, [0, 0.3], file="plots/test3P");
-%uiwait(msgbox("Press OK to continue.", "Done plotting rho"));
+figure(Name="Animation of rho");
+animate(xs(2:end) - dx/2, diff(xs .^ 3 .* (sin(b) .^ 2 + a)) ./ (8*pi*dx .* (xs(2:end) - dx/2) .^ 2), speed, [0, 0.3]);
+uiwait(msgbox("Press OK to continue.", "Done plotting rho"));
