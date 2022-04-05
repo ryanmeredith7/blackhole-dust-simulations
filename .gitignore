@@ -10,5 +10,7 @@ notes/*.bbl
 notes/*.bcf
 notes/*.blg
 notes/*.run.xml
+notes/*.nav
+notes/*.snm
 plots/*
 lib/*.mex*

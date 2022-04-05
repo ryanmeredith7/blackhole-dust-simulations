@@ -1,0 +1,294 @@
+\documentclass[12pt]{beamer}
+\usepackage{multimedia}
+\usefonttheme{serif}
+
+\usetheme{Madrid}
+\beamertemplatenavigationsymbolsempty
+
+\usepackage[intlimits]{mathtools}
+\usepackage{amssymb}
+\newcommand{\dd}{\mathop{}\!\mathrm{d}}
+
+\title[Simulating Black Holes]{Simulating Black Holes as Dust Clouds with Loop Quantum
+Gravity Correction}
+\author{Ryan Meredith}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}{Introduction}
+    This project consists of:
+    \begin{itemize}
+        \item Lema\^{i}tre-Tolman-Bondi metric in Painlev\'{e}-Gullstrand coordinates
+            with loop quantum gravity corrections
+        \item Numeric solver of equations of motion
+        \item Animations of several initial conditions
+        \item Timer of event horizon lifetimes
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Background}
+    \begin{itemize}
+        \item A black hole is a region of space-time which is separated from infinity by
+            an event horizon
+        \item An event horizon is a surface across which there are no time-like paths
+            from the interior to infinity
+        \item In essence, an event horizon is a surface particles can enter but not
+            escape
+        \item Classically, there is a singularity at the center of the black hole, where
+            the curvature is infinite
+        \item With loop quantum gravity, there is a maximum density imposed, so there is
+            no longer a singularity at the center of the black hole
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Background}
+    Lema\^{i}tre-Tolman-Bondi metric:
+    \[ \dd s^2 = -\dd t^2 + \frac{\dot{R}(t,r)^2}{1 + 2E(r)} \dd r^2 + R^2\dd \Omega^2 \]
+    In Painlev\'{e}-Gullstrand coordinates:
+    \[ \dd s^2 = -\dd t^2 + \frac{\left(\dd R^2 + \sqrt{E(t,R) + \frac{F(t,R)}{R}}\dd
+    t\right)^2} {1 + E(t,R)} + R^2\dd \Omega^2 \]
+    With loop quantum gravity corrections:
+    \[ \dd s^2 = -\dd t^2 + \frac{E^b(x,t)^2}{x^2} (\dd x + N^x\dd t)^2 + x^2 \dd
+    \Omega^2 \]
+    \[ N^x = -\frac{x}{\gamma\sqrt{\Delta}}
+    \sin\left(\frac{\sqrt{\Delta}b(x,t)}{x}\right)
+    \cos\left(\frac{\sqrt{\Delta}b(x,t)}{x}\right) \]
+\end{frame}
+
+\begin{frame}{Equations of motion}
+    \begin{multline*}
+        \dot{b} = \frac{\gamma x}{2(E^b)^2} - \frac{\gamma}{2x} - \frac{x}{\gamma\Delta}
+        \sin\left( \frac{\sqrt{\Delta}}{x}b \right) \\
+        \cdot \left( \frac{3}{2}\sin\left( \frac{\sqrt{\Delta}}{x}b \right) + \partial_x
+        \left( \sin\left(\frac{\sqrt{\Delta}}{x}b\right) \right) \right)
+    \end{multline*}
+    \[ \dot{E^b} = -\frac{x^2}{\gamma\sqrt{\Delta}} \partial_x \left( \frac{E^b}{x}
+    \right) \sin \left( \frac{\sqrt{\Delta}}{x}b \right) \cos \left(
+    \frac{\sqrt{\Delta}}{x}b \right) \]
+\end{frame}
+
+\begin{frame}{Change of Variables}
+    For the numerics, let $\gamma=\Delta=1$.
+
+    \[ \alpha = \frac{1}{x^2} - \frac{1}{(E^b)^2} \]
+    \[ \beta = \frac{b}{x} \]
+
+    \[ \dot{\alpha} = -\frac{x}{2}\sin(2\beta)\alpha_x - \sin(2\beta)\alpha \]
+    \[ \dot{\beta} = -\frac{x}{2}\sin(2\beta)\beta_x - \frac{3}{2}\sin^2(\beta) -
+    \frac{\alpha}{2} \]
+\end{frame}
+
+\begin{frame}{PDE Solver}
+    \begin{itemize}
+        \item Based on \textit{Finite Volume Methods for Hyperbolic Problems} by Randall
+            J.\ LeVeque
+        \item Solutions emit shock waves, so a modified Godunov's method was used
+        \item The solution domain was split up into cells
+        \item Initial function approximated as piecewise constant functions
+        \item Waves emanate from each cell interface
+        \item Wave speed given by
+            \[ \frac{x}{2}\sin(2\beta) \]
+        \item Does not depend on $\alpha$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Wave Speeds}
+    \begin{itemize}
+        \item Wave structure can be complicated
+        \item Create an average wave to each direction at each cell interface
+        \item Normalize the wave speeds to always use $\beta_n - \beta_{n-1}$ and
+            $\alpha_n - \alpha_{n-1}$ as the size of the waves for $\beta$ and $\alpha$
+            respectively
+        \item At the interface of cell $n-1$ and $n$
+            \[ s_{n-1/2} = \begin{dcases}
+                \frac{x_{n-1/2}}{2} \frac{\sin^2(\beta_n) - \sin^2(\beta_{n-1})}{\beta_n
+                - \beta_{n-1}}, & \beta_n \ne \beta_{n-1} \\
+                \frac{x_{n-1/2}}{2} \sin(2\beta_n), & \beta_n = \beta_n{-1}
+            \end{dcases} \]
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Wave Speeds}
+    \[ s_{n-1/2}^l = \begin{dcases}
+        \frac{x_{n-1/2}}{2} \frac{\sin^2(\beta_{n-1})}{\beta_{n-1} - \beta_n}, &
+        \left\lfloor \frac{\beta_{n-1}}{\pi} \right\rfloor < \left\lfloor
+        \frac{\beta_n}{\pi} \right\rfloor \\
+        \frac{x_{n-1/2}}{2} \frac{\cos^2(\beta_{n-1})}{\beta_n - \beta_{n-1}}, &
+        \left\lfloor \frac{\beta_{n-1}}{\pi} - \frac{1}{2} \right\rfloor  > \left\lfloor
+        \frac{\beta_n}{\pi} - \frac{1}{2} \right\rfloor \\
+        \min(s_{n-1/2}, 0), & \textrm{otherwise}
+    \end{dcases} \]
+    \[ s_{n-1/2}^r = \begin{dcases}
+        \frac{x_{n-1/2}}{2} \frac{\sin^2(\beta_n)}{\beta_n - \beta_{n-1}}, &
+        \left\lfloor \frac{\beta_{n-1}}{\pi} \right\rfloor < \left\lfloor
+        \frac{\beta_n}{\pi} \right\rfloor \\
+        \frac{x_{n-1/2}}{2} \frac{\cos^2(\beta_n)}{\beta_{n-1} - \beta_n}, &
+        \left\lfloor \frac{\beta_{n-1}}{\pi} - \frac{1}{2} \right\rfloor  > \left\lfloor
+        \frac{\beta_n}{\pi} - \frac{1}{2} \right\rfloor \\
+        \max(s_{n-1/2}, 0), & \textrm{otherwise}
+    \end{dcases} \]
+\end{frame}
+
+\begin{frame}{Update Formulas}
+    \begin{multline*}
+        \alpha_n^{new} = \alpha_n - \Delta t \Biggl( \frac{s_{n-1/2}^r (\alpha_n -
+        \alpha_{n-1}) + s_{n+1/2}^l (\alpha_{n+1} - \alpha_n)}{\Delta x} \\
+        + \sin(2\beta_n)\alpha_n \Biggr)
+    \end{multline*}
+    \begin{multline*}
+        \beta_n^{new} = \beta_n - \Delta t \Biggl( \frac{s_{n-1/2}^r (\beta_n -
+        \beta_{n-1}) + s_{n+1/2}^l (\beta_{n+1} - \beta_n)}{\Delta x} \\
+        + \frac{3}{2}\sin^2(\beta_n) + \frac{\alpha_n}{2} \Biggr)
+    \end{multline*}
+\end{frame}
+
+\begin{frame}{Boundary Condition}
+    Inner boundary irrelevant, wave speed is zero
+    \[ \beta_0 = \beta_1 \]
+    \[ \alpha_0 = \alpha_1 \]
+
+    Outer boundary, $\dot{\alpha} = \dot{\beta} = 0$
+    \[ \beta_{N+1} = -\sin^{-1}\left( \sqrt{\sin^2(\beta_N) - \frac{1}{N}
+    (3\sin^2(\beta_N) + \alpha_N)} \right) \]
+    \[ \alpha_{N+1} = \frac{1 + 2 (\beta_{N+1} - \beta_N)
+    \sin(2\beta_N)}{3\sin^2(\beta_N) + \alpha_N} \alpha_N \]
+\end{frame}
+
+\begin{frame}{Dynamics and Animations}
+    \begin{itemize}
+        \item I will be showing the animations generated by my program
+        \item I will explain our expectations
+        \item I will point out anything interesting we saw in the animations
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[shrink]{No Curvature $\alpha$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/flatA.png}}{../plots/flatA.avi}
+\end{frame}
+\begin{frame}[shrink]{No Curvature $\beta$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/flatB.png}}{../plots/flatB.avi}
+\end{frame}
+
+\begin{frame}[shrink]{No Curvature $\rho$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/flatP.png}}{../plots/flatP.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Simple Curvature $\alpha$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/testA.png}}{../plots/testA.avi}
+\end{frame}
+\begin{frame}[shrink]{Simple Curvature $\beta$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/testB.png}}{../plots/testB.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Simple Curvature $\rho$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/testP.png}}{../plots/testP.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Sinusoidal Curvature $\alpha$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/test2A.png}}{../plots/test2A.avi}
+\end{frame}
+\begin{frame}[shrink]{Sinusoidal Curvature $\beta$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/test2B.png}}{../plots/test2B.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Sinusoidal Curvature $\rho$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/test2P.png}}{../plots/test2P.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Sawtooth Curvature $\alpha$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/test3A.png}}{../plots/test3A.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Sawtooth Curvature $\beta$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/test3B.png}}{../plots/test3B.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Sawtooth Curvature $\rho$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/test3P.png}}{../plots/test3P.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Random Curvature $\alpha$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/testRA.png}}{../plots/testRA.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Random Curvature $\beta$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/testRB.png}}{../plots/testRB.avi}
+\end{frame}
+
+\begin{frame}[shrink]{Random Curvature $\rho$}
+    \centering
+    \movie{\includegraphics[width=0.9\textwidth]{../plots/testRP.png}}{../plots/testRP.avi}
+\end{frame}
+
+\begin{frame}{Event Horizon Lifetimes}
+    \begin{itemize}
+        \item Event horizon exists where $\theta$ is zero
+            \[ \theta = 1 - x^2 \left( \alpha + \frac{\sin^2(2\beta)}{4} \right) \]
+        \item Created a function which times the lifetime of event horizons
+        \item Tested on the flat special case
+        \item Expected event horizon lifetimes to depend quadratically on the mass of
+            the black hole, with leading coefficient $\frac{8}{3}\pi = 8.37758$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Fitted Data}
+    \centering
+    \includegraphics[width=0.7\textwidth]{../plots/fit.png}
+    \[ t = 2.307m^2 + 29.299m - 63.057 \]
+    \[ R^2 = 0.99327 \]
+\end{frame}
+
+\begin{frame}{The Issue}
+    \begin{itemize}
+        \item The speed of shock waves is highly dependant on the exact form of the
+            equations being solved
+        \item Mathematically equivalent forms of equations will give different solutions
+            numerically
+        \item Especially important is choice of variables
+        \item I used a non-conservative form of the equations because they were easier
+            to implement
+        \item Speed of shock waves were too fast
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Next Steps}
+    \begin{itemize}
+        \item Rewrite program to use variable $B = xb = x^2\beta$, this will give a
+            conservation law with a source term for one of the equations
+        \item Fix boundary condition issue
+        \item Look at event horizon lifetimes for curved cases
+        \item Examine more dynamics of curved cases
+        \item See if higher order correction term improves results
+        \item See if using a fractional step method improves results
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Conclusion}
+    \begin{itemize}
+        \item Got equations of a black hole as a dust cloud and added loop quantum
+            gravity corrections
+        \item Created a numeric solver for the equations and used it in a simulation
+            program
+        \item Found some issues with the solver
+        \item Still showed interesting dynamics, which we believe are accurate, just on
+            a incorrect time scale
+    \end{itemize}
+\end{frame}
+
+\end{document}
